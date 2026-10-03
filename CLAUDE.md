@@ -1,3 +1,21 @@
+> **Fork:** this is `pumpkit-io/sdlc`, a fork of mattpocock/skills. Read [FORK.md](./FORK.md) first: it overrides the rules below for fork-only changes.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues on `pumpkit-io/sdlc`, managed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one root `GLOSSARY.md` plus ADRs. See `docs/agents/domain.md`.
+
+## Upstream maintainer rules
+
 Skills are organized into bucket folders under `skills/`:
 
 - `engineering/`: daily code work
