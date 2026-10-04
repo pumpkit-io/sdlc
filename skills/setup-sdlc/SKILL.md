@@ -120,4 +120,4 @@ For "other" issue trackers, write `docs/agents/issue-tracker.md` from scratch us
 
 Tell the user the setup is complete and which engineering skills will now read from these files. Mention they can edit `docs/agents/*.md` directly later; re-running this skill is only necessary if they want to switch issue trackers, restart from scratch, or move an older `CLAUDE.md` setup to `AGENTS.md`.
 
-Say which file got the block and whether `CLAUDE.md` imports it. If there is no `CLAUDE.md`, add one line for Claude Code users: create a `CLAUDE.md` containing `@AGENTS.md`.
+Say which file got the block and whether `CLAUDE.md` is linked to it (by import or symlink). If there is no `CLAUDE.md`, add one line for Claude Code users: create a `CLAUDE.md` containing `@AGENTS.md`.

@@ -19,6 +19,8 @@ claude plugin install sdlc@pumpkit-io --scope user
 
 Then run `/reload-plugins` or restart. Third-party marketplaces don't auto-update by default: enable it in `/plugin`, Marketplaces tab, or run `claude plugin update sdlc@pumpkit-io`.
 
+Prefer editable files? Use the `npx` install below instead of the plugin (`-a claude-code`); you lose the git guardrail hook.
+
 ### Codex, Cursor, Gemini CLI, Copilot, OpenCode and other agents
 
 ```bash
@@ -27,7 +29,7 @@ npx skills@latest add pumpkit-io/sdlc -a codex -a cursor   # or name the agents
 npx skills@latest add pumpkit-io/sdlc -g              # install for your user, not this project
 ```
 
-The skills land in `.agents/skills/` (the folder Codex, Cursor, Gemini CLI, Copilot and OpenCode read), as ordinary files you own and can edit. Pull later changes with `npx skills update`. If you install a subset with `--skill`, include `setup-sdlc`.
+The skills land in `.agents/skills/` (the folder Codex, Cursor, Gemini CLI, Copilot and OpenCode read), as ordinary files you own and can edit. With `-g` they go to each agent's user-level folder instead. Pull later changes with `npx skills update`. If you install a subset with `--skill`, include `setup-sdlc`.
 
 ### Then, once per project repo
 
