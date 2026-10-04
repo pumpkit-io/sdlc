@@ -34,34 +34,55 @@ Then spawn a sub-agent to walk the codebase (if your agent can't spawn sub-agent
 
 Apply the **deletion test** to anything you suspect is shallow: would deleting it concentrate complexity, or just move it? A "yes, concentrates" is the signal you want.
 
-### 2. Present candidates as an HTML report
+### 2. Record candidates, then present them as an HTML report
 
-Write a self-contained HTML file to the OS temp directory so nothing lands in the repo. Resolve the temp dir from `$TMPDIR`, falling back to `/tmp` (or `%TEMP%` on Windows), and write to `<tmpdir>/architecture-review-<timestamp>.html` so each run gets a fresh file. Open it for the user (`xdg-open <path>` on Linux, `open <path>` on macOS, `start <path>` on Windows) and tell them the absolute path.
+Each candidate gets two renderings: a markdown doc in the repo that an agent can read cold, and an HTML report for the user to look at. Write the doc first; the HTML draws its content from it.
+
+**Use GLOSSARY.md vocabulary for the domain, and the `/codebase-design` vocabulary for the architecture**, in both. If `GLOSSARY.md` defines "Order," talk about "the Order intake module," not "the FooBarHandler," and not "the Order service."
+
+**ADR conflicts**: if a candidate contradicts an existing ADR, only surface it when the friction is real enough to warrant revisiting the ADR. Say so plainly in the candidate (e.g. _"contradicts ADR-0007, but worth reopening because…"_). Don't list every theoretical refactor an ADR forbids.
+
+#### The candidates doc
+
+Write `docs/architecture-improvements/<scope>-YYYY-MM-DD.md` in the target repo, where `<scope>` is a kebab-case name for the area you scanned (the repo's name for a whole-repo scan). Create the directory if it doesn't exist, and add `docs/architecture-improvements/` to the repo's `.gitignore` unless a line there already covers it.
+
+The doc is a **handoff**: a fresh agent session must be able to pick up any single candidate from its section alone, with neither this session nor the HTML. Plain prose, no diagrams. Structure it as:
+
+- **Header**: the scope scanned, the date, the current commit SHA (so a later reader can judge staleness), and one line for the reader: _"To explore a candidate, load the `grilling`, `codebase-design` and `domain-modeling` skills, then grill through that candidate's section."_
+- **One `##` section per candidate**, each self-contained:
+  - **Files**: which files/modules are involved
+  - **Problem**: why the current architecture is causing friction
+  - **Solution**: plain English description of what would change
+  - **Benefits**: explained in terms of locality and leverage, and how tests would improve
+  - **Recommendation strength**: one of `Strong`, `Worth exploring`, `Speculative`
+  - **Dependency category**: from the `codebase-design` skill's dependency categories, and what that means for testing across the seam
+  - **ADR conflicts**: the ADR and why it's worth reopening, or "none"
+  - **Interactions**: how this candidate overlaps, enables, or conflicts with the others, restating what the reader needs about each one, since the reader may open only this section
+- **Top recommendation**: which candidate you'd tackle first and why.
+
+#### The HTML report
+
+Write a self-contained HTML file to the OS temp directory: it is for viewing, so it stays out of the repo. Resolve the temp dir from `$TMPDIR`, falling back to `/tmp` (or `%TEMP%` on Windows), and write to `<tmpdir>/architecture-review-<timestamp>.html` so each run gets a fresh file. Open it for the user (`xdg-open <path>` on Linux, `open <path>` on macOS, `start <path>` on Windows).
 
 The report uses **Tailwind via CDN** for layout and styling, and **Mermaid via CDN** for diagrams where a graph/flow/sequence reliably communicates the structure. Mix Mermaid with hand-crafted CSS/SVG visuals: use Mermaid when relationships are graph-shaped (call graphs, dependencies, sequences), and hand-built divs/SVG when you want something more editorial (mass diagrams, cross-sections, collapse animations). Each candidate gets a **before/after visualisation**. Be visual.
 
-For each candidate, render a card with:
+For each candidate, render a card with the doc's Files, Problem, Solution and Benefits, plus:
 
-- **Files**: which files/modules are involved
-- **Problem**: why the current architecture is causing friction
-- **Solution**: plain English description of what would change
-- **Benefits**: explained in terms of locality and leverage, and how tests would improve
 - **Before / After diagram**: side-by-side, custom-drawn, illustrating the shallowness and the deepening
-- **Recommendation strength**: one of `Strong`, `Worth exploring`, `Speculative`, rendered as a badge
+- **Recommendation strength**, rendered as a badge
+- **ADR conflict**, if any, as a warning callout
 
-End the report with a **Top recommendation** section: which candidate you'd tackle first and why.
-
-**Use GLOSSARY.md vocabulary for the domain, and the `/codebase-design` vocabulary for the architecture.** If `GLOSSARY.md` defines "Order," talk about "the Order intake module," not "the FooBarHandler," and not "the Order service."
-
-**ADR conflicts**: if a candidate contradicts an existing ADR, only surface it when the friction is real enough to warrant revisiting the ADR. Mark it clearly in the card (e.g. a warning callout: _"contradicts ADR-0007, but worth reopening because…"_). Don't list every theoretical refactor an ADR forbids.
+End the report with the doc's **Top recommendation**.
 
 See [HTML-REPORT.md](HTML-REPORT.md) for the full HTML scaffold, diagram patterns, and styling guidance.
 
-Do NOT propose interfaces yet. After the file is written, ask the user: "Which of these would you like to explore?"
+Do NOT propose interfaces yet. Once both files are written, tell the user both absolute paths and ask: "Which of these would you like to explore?"
 
 ### 3. Grilling loop
 
 Once the user picks a candidate, load the `grilling` skill to walk the decision tree with them: constraints, dependencies, the shape of the deepened module, what sits behind the seam, what tests survive.
+
+When the user wants to explore several candidates, offer the alternative: grill each one in its own fresh session, pointed at that candidate's section of the doc, so earlier candidates don't crowd the context. Grilling here remains fine.
 
 Side effects happen inline as decisions crystallize; load the `domain-modeling` skill to keep the domain model current as you go:
 

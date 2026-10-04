@@ -103,7 +103,7 @@ Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes 
 
 ### Upkeep
 
-- `improve-codebase-architecture` every week or two. A picked candidate becomes an idea for `grill-with-docs`.
+- `improve-codebase-architecture` every week or two. A picked candidate becomes an idea for `grill-with-docs`. To explore several, grill each in a fresh session pointed at its section of the doc in `docs/architecture-improvements/`.
 - `retro` after a session that went badly, before starting a fresh one. Mechanical mistakes become lint rules or hooks; judgement calls become lines in `CODING_STANDARDS.md`.
 
 ## Context rules
@@ -119,6 +119,7 @@ Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes 
 | `AGENTS.md` | you, setup | every session (directly, or through `CLAUDE.md` / `GEMINI.md`): keep it to pointers |
 | `CLAUDE.md` containing `@AGENTS.md` | you, setup | Claude Code |
 | `GLOSSARY.md`, `docs/adr/` | grill-with-docs, domain-modeling, improve-codebase-architecture | everything |
+| `docs/architecture-improvements/` (gitignored) | improve-codebase-architecture | a fresh session grilling one candidate |
 | `docs/agents/*.md` | setup | to-spec, to-tickets, implement-spec, triage, code-review |
 | `CODING_STANDARDS.md` | you, retro | code-review only |
 | `.out-of-scope/` | triage | triage |
