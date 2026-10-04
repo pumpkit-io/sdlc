@@ -73,7 +73,7 @@ Let them edit before writing.
 
 **Where the block goes:**
 
-`AGENTS.md` is the one file every agent reads: Codex, Cursor, Copilot and OpenCode read it directly, and Claude Code reads it through `CLAUDE.md`. Always write the block to `AGENTS.md`:
+`AGENTS.md` is the shared file: Codex, Cursor and OpenCode read it directly, Claude Code reads it through `CLAUDE.md`, and Gemini CLI reads it once `GEMINI.md` points at it. Always write the block to `AGENTS.md`:
 
 - If either file is a symlink to the other, they are one file: update or add the block in it and skip the `CLAUDE.md` rules below.
 - Create `AGENTS.md` if it doesn't exist.
@@ -118,6 +118,6 @@ For "other" issue trackers, write `docs/agents/issue-tracker.md` from scratch us
 
 ### 5. Done
 
-Tell the user the setup is complete and which engineering skills will now read from these files. Mention they can edit `docs/agents/*.md` directly later; re-running this skill is only necessary if they want to switch issue trackers or restart from scratch.
+Tell the user the setup is complete and which engineering skills will now read from these files. Mention they can edit `docs/agents/*.md` directly later; re-running this skill is only necessary if they want to switch issue trackers, restart from scratch, or move an older `CLAUDE.md` setup to `AGENTS.md`.
 
 Say which file got the block and whether `CLAUDE.md` imports it. If there is no `CLAUDE.md`, add one line for Claude Code users: create a `CLAUDE.md` containing `@AGENTS.md`.

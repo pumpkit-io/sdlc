@@ -33,6 +33,8 @@ The skills land in `.agents/skills/` (the folder Codex, Cursor, Gemini CLI, Copi
 
 Run `setup-sdlc` (see [Invoking skills](#invoking-skills) for your agent's syntax). It records the repo's issue tracker and doc layout in `AGENTS.md` and `docs/agents/`.
 
+Already set up a repo with an older version that wrote to `CLAUDE.md`? Re-run `setup-sdlc` once: it moves the block to `AGENTS.md`, where other agents can see it.
+
 ## Invoking skills
 
 | Agent | Syntax | Example |
@@ -54,7 +56,7 @@ As of 2026-10. Agents change fast; open an issue if a row is out of date.
 | Skills install and run | yes | yes | yes | yes | yes | yes |
 | Command skills run only when you invoke them | yes | yes (via `agents/openai.yaml`) | yes | yes (VS Code) | no, the model may load them | no, the model may load them |
 | Reference skills hidden from menus | yes | no | no | yes (VS Code) | no | no |
-| Parallel sub-agents (code-review, implement-spec) | yes | yes | yes | yes | yes | not verified |
+| Parallel sub-agents (code-review, implement-spec) | yes | not verified | not verified | not verified | not verified | not verified |
 | Git guardrail hook | yes | no | no | no | no | no |
 | Instruction file it reads | `CLAUDE.md`, which imports `AGENTS.md` | `AGENTS.md` | `AGENTS.md` | not verified | `GEMINI.md` (point it at `AGENTS.md`) | `AGENTS.md` |
 
@@ -112,7 +114,7 @@ Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes 
 
 | File | Written by | Read by |
 |---|---|---|
-| `AGENTS.md` | you, setup | every session in every agent: keep it to pointers |
+| `AGENTS.md` | you, setup | every session (directly, or through `CLAUDE.md` / `GEMINI.md`): keep it to pointers |
 | `CLAUDE.md` containing `@AGENTS.md` | you, setup | Claude Code |
 | `GLOSSARY.md`, `docs/adr/` | grill-with-docs, domain-modeling, improve-codebase-architecture | everything |
 | `docs/agents/*.md` | setup | to-spec, to-tickets, implement-spec, triage, code-review |
