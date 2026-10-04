@@ -13,7 +13,7 @@ A single tracked unit of work inside an **Issue tracker**: a bug, task, spec, or
 _Avoid_: ticket (use only when quoting external systems that call them tickets, or for a slice produced by `to-tickets`)
 
 **Triage role**:
-A canonical state-machine label applied to an **Issue** during triage (e.g. `needs-triage`, `ready-for-agent`). Each role maps to a real label string in the **Issue tracker** via `docs/agents/triage-labels.md`.
+A canonical state-machine label applied to an **Issue** during triage (e.g. `needs-triage`, `ready-for-agent`). By default the role name is also the label string in the **Issue tracker**; `docs/agents/triage-labels.md`, when present, overrides that per role.
 
 ## Relationships
 
