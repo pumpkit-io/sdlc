@@ -1,6 +1,6 @@
 # sdlc
 
-Agent skills for the software development lifecycle, packaged as one Claude Code plugin: idea, spec, tickets, code, review, PR, with a glossary and ADRs kept current along the way. It is the agent harness used across pumpkit-io projects.
+Agent skills for SDLC (Software Development LifeCycle), packaged as one Claude Code plugin: idea, spec, tickets, code, review, PR, with a glossary and ADRs kept current along the way. It is the agent harness used across pumpkit-io projects.
 
 ## Install
 
