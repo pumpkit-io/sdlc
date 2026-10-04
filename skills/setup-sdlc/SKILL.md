@@ -21,7 +21,7 @@ This is a prompt-driven skill, not a deterministic script. Explore, present what
 Look at the current repo to understand its starting state. Read whatever exists; don't assume:
 
 - `git remote -v` and `.git/config`: is this a GitHub repo? Which one?
-- `AGENTS.md` and `CLAUDE.md` at the repo root: does either exist? Is there already an `## Agent skills` section in either?
+- `AGENTS.md` and `CLAUDE.md` at the repo root: does either exist? Is either a symlink to the other? Does `CLAUDE.md` already contain an `@AGENTS.md` line? Which of them holds an `## Agent skills` section, if any?
 - `GLOSSARY.md` and `GLOSSARY-MAP.md` at the repo root
 - `docs/adr/` and any `src/*/docs/adr/` directories
 - `docs/agents/`: does this skill's prior output already exist?
@@ -64,22 +64,27 @@ Offer **multi-context** (a root `GLOSSARY-MAP.md` pointing to per-context `GLOSS
 
 Show the user a draft of:
 
-- The `## Agent skills` block to add to whichever of `CLAUDE.md` / `AGENTS.md` is being edited (see step 4 for selection rules)
+- The `## Agent skills` block to write to `AGENTS.md`, plus any `CLAUDE.md` edit step 4 calls for (adding `@AGENTS.md`, or removing an old block)
 - The contents of `docs/agents/issue-tracker.md`, `docs/agents/domain.md`, and `docs/agents/triage-labels.md` (the last only when the user gave label overrides in Section B)
 
 Let them edit before writing.
 
 ### 4. Write
 
-**Pick the file to edit:**
+**Where the block goes:**
 
-- If `CLAUDE.md` exists, edit it.
-- Else if `AGENTS.md` exists, edit it.
-- If neither exists, ask the user which one to create; don't pick for them.
+`AGENTS.md` is the one file every agent reads: Codex, Cursor, Copilot and OpenCode read it directly, and Claude Code reads it through `CLAUDE.md`. Always write the block to `AGENTS.md`:
 
-Never create `AGENTS.md` when `CLAUDE.md` already exists (or vice versa); always edit the one that's already there.
+- If either file is a symlink to the other, they are one file: update or add the block in it and skip the `CLAUDE.md` rules below.
+- Create `AGENTS.md` if it doesn't exist.
+- If an `## Agent skills` block already exists in it, update its contents in place rather than appending a duplicate. Don't overwrite user edits to the surrounding sections.
 
-If an `## Agent skills` block already exists in the chosen file, update its contents in-place rather than appending a duplicate. Don't overwrite user edits to the surrounding sections.
+Then, only if `CLAUDE.md` exists:
+
+- If it doesn't already contain an `@AGENTS.md` line, add `@AGENTS.md` as its first line.
+- If it holds an `## Agent skills` block from an earlier setup, remove that block: its content now lives in `AGENTS.md`.
+
+If `CLAUDE.md` doesn't exist, don't create it. Never edit `GEMINI.md`.
 
 The block:
 
@@ -114,3 +119,5 @@ For "other" issue trackers, write `docs/agents/issue-tracker.md` from scratch us
 ### 5. Done
 
 Tell the user the setup is complete and which engineering skills will now read from these files. Mention they can edit `docs/agents/*.md` directly later; re-running this skill is only necessary if they want to switch issue trackers or restart from scratch.
+
+Say which file got the block and whether `CLAUDE.md` imports it. If there is no `CLAUDE.md`, add one line for Claude Code users: create a `CLAUDE.md` containing `@AGENTS.md`.
