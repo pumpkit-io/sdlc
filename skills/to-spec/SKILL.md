@@ -73,3 +73,7 @@ A description of the things that are out of scope for this spec.
 Any further notes about the feature.
 
 </spec-template>
+
+## Finishing
+
+Fold every loose end left in the conversation into the spec (Out of Scope or Further Notes), or into a spec of its own when it is separate work. The spec issues are this skill's only output. Close by naming the next step: `to-tickets`.
