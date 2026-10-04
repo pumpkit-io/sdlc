@@ -20,6 +20,8 @@ Each skill is one of three types:
 
 `skills/writing-for-agents/SKILL-MECHANICS.md` explains how to choose. Every skill keeps an `agents/openai.yaml` so the set stays installable in Codex and other Agent Skills harnesses via `npx skills add`.
 
+Portability: the skills must work in every agent the README's support matrix names. Skills load other skills with "Load the `X` skill" and never name a vendor tool. Every sub-agent instruction carries an inline fallback for agents that can't spawn one. A skill that can't degrade declares it in a `compatibility` frontmatter field and its first body line says what to use instead. Changing a skill's type flags, or the hook, means updating the README support matrix. `docs/adr/0002-agent-neutral-skills-single-native-package.md` records why the Claude Code plugin is the only native package.
+
 Run `claude plugin validate .` after touching either manifest. Two warnings are expected: no `version` (on purpose, so installs follow the latest commit) and `CLAUDE.md` at the plugin root (it is repo context, not plugin context).
 
 `hooks/block-dangerous-git.sh` is the always-on git guardrail. When you change it, pipe sample `{"tool_input":{"command":"..."}}` payloads through it and check exit codes: 2 for blocked commands, 0 for allowed ones.
