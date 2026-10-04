@@ -1,0 +1,26 @@
+# Issue tracker: Local Markdown
+
+Issues and specs for this repo live as markdown files in `.scratch/`.
+
+## Conventions
+
+- One feature per directory: `.scratch/<feature-slug>/`
+- The spec is `.scratch/<feature-slug>/spec.md`
+- Implementation issues are one file per ticket at `.scratch/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01`, never a single combined tickets file
+- Triage state is recorded as a `Status:` line near the top of each issue file (the role names, or the overrides in `docs/agents/triage-labels.md` if it exists)
+- Comments and conversation history append to the bottom of the file under a `## Comments` heading
+
+## When a skill says "publish to the issue tracker"
+
+Create a new file under `.scratch/<feature-slug>/` (creating the directory if needed).
+
+## When a skill says "fetch the relevant ticket"
+
+Read the file at the referenced path. The user will normally pass the path or the issue number directly.
+
+## Blocking links
+
+Used by `/to-tickets` to record blocking edges and by `/implement-spec` to find the frontier.
+
+- **Blocking**: a `Blocked by: NN, NN` line near the top of the ticket file. A ticket is unblocked when every file it lists is done.
+- **Frontier**: the files under `.scratch/<feature>/issues/` that are open and unblocked; first by number wins.
