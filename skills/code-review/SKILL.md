@@ -8,7 +8,7 @@ Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 - **Standards**: does the code conform to this repo's documented coding standards?
 - **Spec**: does the code faithfully implement the originating issue / spec?
 
-Both axes run as **parallel sub-agents** so they don't pollute each other's context, then this skill aggregates their findings.
+Both axes run as **parallel sub-agents** (or one after another when your agent can't spawn them; see step 4) so they don't pollute each other's context, then this skill aggregates their findings.
 
 The issue tracker should have been provided to you. If `docs/agents/issue-tracker.md` is missing, tell the user to run `/setup-sdlc`.
 
@@ -57,7 +57,7 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 ### 4. Spawn both sub-agents in parallel
 
-If your agent can't spawn sub-agents, run the two reviews one after another in this session instead: Standards first, then Spec, each written up in full before the next one starts. The prompts below become your own brief for each pass.
+If your agent can't spawn sub-agents, run the two reviews one after another in this session instead: Standards first, then Spec, each written up in full before the next one starts, and don't let the Standards findings shape the Spec pass. The prompts below become your own brief for each pass.
 
 **Standards sub-agent prompt** should include:
 
