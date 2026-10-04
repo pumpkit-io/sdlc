@@ -24,7 +24,7 @@ Portability: the skills must work in every agent the README's support matrix nam
 
 Run `claude plugin validate .` after touching either manifest. Two warnings are expected: no `version` (on purpose, so installs follow the latest commit) and `CLAUDE.md` at the plugin root (it is repo context, not plugin context).
 
-`hooks/block-dangerous-git.sh` is the always-on git guardrail. When you change it, pipe sample `{"tool_input":{"command":"..."}}` payloads through it and check exit codes: 2 for blocked commands, 0 for allowed ones.
+`hooks/block-dangerous-git.sh` is the always-on git guardrail. When you change it, run `hooks/test-block-dangerous-git.sh` and add a case for the behaviour you changed (exit 2 for blocked commands, 0 for allowed ones).
 
 Skills that cannot work without per-repo config point to `/setup-sdlc`; the others degrade silently. See `docs/adr/0001-explicit-setup-pointer-only-for-hard-dependencies.md`.
 
