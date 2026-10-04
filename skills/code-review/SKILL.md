@@ -57,6 +57,8 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 ### 4. Spawn both sub-agents in parallel
 
+If your agent can't spawn sub-agents, run the two reviews one after another in this session instead: Standards first, then Spec, each written up in full before the next one starts. The prompts below become your own brief for each pass.
+
 **Standards sub-agent prompt** should include:
 
 - The full diff command and commit list.
