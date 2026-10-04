@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # sdlc git guardrails: PreToolUse hook for the Bash tool.
 # Exit 0 lets the command run. Exit 2 blocks it, and stderr is shown to the agent.
-# Adapted from skills/misc/git-guardrails-claude-code. Requires jq.
+# Adapted from the git-guardrails-claude-code skill in mattpocock/skills. Requires jq.
 
 PUSH_POLICY="branches"   # "branches": feature-branch pushes allowed. "none": every push blocked.
 

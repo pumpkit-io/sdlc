@@ -1,13 +1,23 @@
 {
   "name": "sdlc",
-  "description": "Agent harness for pumpkit-io projects: grill, spec, tickets, TDD, two-axis code review, PRs, triage, bug diagnosis and architecture upkeep. Curated fork of mattpocock/skills.",
-  "author": { "name": "pumpkit-io", "url": "https://pumpkit.io" },
+  "description": "Agent skills for the software development lifecycle: grill, spec, tickets, TDD, two-axis code review, PRs, triage, bug diagnosis and architecture upkeep.",
+  "author": {
+    "name": "pumpkit-io",
+    "url": "https://pumpkit.io"
+  },
   "homepage": "https://github.com/pumpkit-io/sdlc",
   "repository": "https://github.com/pumpkit-io/sdlc",
   "license": "MIT",
-  "keywords": ["sdlc", "engineering", "tdd", "code-review", "grilling", "triage"],
+  "keywords": [
+    "sdlc",
+    "engineering",
+    "tdd",
+    "code-review",
+    "grilling",
+    "triage"
+  ],
   "skills": [
-    "./skills/setup-matt-pocock-skills",
+    "./skills/setup-sdlc",
     "./skills/grill-with-docs",
     "./skills/domain-modeling",
     "./skills/to-spec",

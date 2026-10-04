@@ -1,8 +1,6 @@
 # sdlc
 
-A curated, lightly adapted fork of [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), packaged as one Claude Code plugin. It is the agent harness used across pumpkit-io projects: idea, spec, tickets, code, review, PR, with a glossary and ADRs kept current along the way.
-
-What differs from upstream, and how to sync: [FORK.md](./FORK.md).
+Agent skills for the software development lifecycle, packaged as one Claude Code plugin: idea, spec, tickets, code, review, PR, with a glossary and ADRs kept current along the way. It is the agent harness used across pumpkit-io projects.
 
 ## Install
 
@@ -15,19 +13,19 @@ claude plugin install sdlc@pumpkit-io --scope user
 
 Then run `/reload-plugins` or restart. Skills appear as `/sdlc:<name>`. Third-party marketplaces don't auto-update by default: enable it in `/plugin`, Marketplaces tab, or run `claude plugin update sdlc@pumpkit-io`.
 
-Codex and other agents (copies editable skill files into a project; pick the ones listed below):
+Codex and other agents (copies editable skill files into a project):
 
 ```bash
 npx skills@latest add pumpkit-io/sdlc
 ```
 
-Then, once in every project repo: `/sdlc:setup-matt-pocock-skills`.
+Then, once in every project repo: `/sdlc:setup-sdlc`.
 
 ## Skill types
 
 | Type | Triggered by | Skills |
 |---|---|---|
-| Command | You, by typing it | setup-matt-pocock-skills, grill-with-docs, to-spec, to-tickets, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
+| Command | You, by typing it | setup-sdlc, grill-with-docs, to-spec, to-tickets, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
 | Automatic | The agent when relevant, or you | tdd, diagnosing-bugs, code-review, pr, prototype, domain-modeling, setup-pre-commit |
 | Reference | Other skills only | grilling, codebase-design, writing-for-agents |
 
@@ -85,6 +83,19 @@ Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes 
 
 An always-on `PreToolUse` hook (`hooks/block-dangerous-git.sh`, needs `jq`) blocks: force pushes, pushes to main/master, remote branch deletion, `reset --hard`, `clean -f`, `branch -D`, `checkout .` / `restore .`, `gh pr merge`, `gh repo delete` and visibility changes. Pushing feature branches and opening PRs stays allowed, so unattended runs can publish their work while merging stays with the human. Change `PUSH_POLICY` in the script to `none` to block all pushes.
 
+## Credits and upstream
+
+Forked from [mattpocock/skills](https://github.com/mattpocock/skills) at `d81f3a183412e71a5b1e84ca21bc1a35eea03a60` (2026-10-03), then trimmed to the skills above, flattened and renamed. The `pr` skill's summary visuals come from Dex Horthy's `show-me` skill (see [skills/pr/CREDITS.md](./skills/pr/CREDITS.md)).
+
+This repo no longer merges from upstream. To port an upstream improvement to a skill kept here:
+
+```bash
+git fetch upstream
+git diff d81f3a1 upstream/main -- skills/<bucket>/<name>/   # upstream still uses bucket folders
+```
+
+Apply what's worth keeping to `skills/<name>/` by hand, then re-check the skill for references to skills that don't exist here.
+
 ## License
 
-MIT, as upstream. See [LICENSE](./LICENSE).
+MIT. See [LICENSE](./LICENSE).

@@ -1,12 +1,15 @@
 {
   "name": "pumpkit-io",
-  "owner": { "name": "pumpkit-io", "url": "https://pumpkit.io" },
-  "description": "pumpkit-io's agent harness, installable as a Claude Code plugin.",
+  "owner": {
+    "name": "pumpkit-io",
+    "url": "https://pumpkit.io"
+  },
+  "description": "pumpkit-io's agent skills, installable as a Claude Code plugin.",
   "plugins": [
     {
       "name": "sdlc",
       "source": "./",
-      "description": "Curated mattpocock/skills fork: idea to spec to tickets to code to review to PR.",
+      "description": "Idea to spec to tickets to code to review to PR.",
       "category": "engineering"
     }
   ]
