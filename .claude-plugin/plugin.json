@@ -25,6 +25,7 @@
     "./skills/implement",
     "./skills/implement-spec",
     "./skills/tdd",
+    "./skills/code-comments",
     "./skills/codebase-design",
     "./skills/code-review",
     "./skills/pr",
