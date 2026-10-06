@@ -22,6 +22,7 @@ Each entry leads with the target; the example after it is the slop it replaces.
 - **Plain words.** Replaces decorative emoji: `// ✅ Validation`, `// 🚀 Performance`.
 - **Closing braces that end their own blocks.** Replaces end markers: `} // end if`, `# End of function`. Keep one only in a block long enough that the marker prevents real confusion.
 - **One comment per logical block.** If the block needs none, write none. Replaces line-by-line narration: `// Loop items`, `// Get item`, `// Increment`, `// Return result` on consecutive lines.
+- **Punctuation without em-dashes.** A comment you write or rewrite contains no em-dash (U+2014): restructure the sentence into the comma, colon, period or parentheses it actually wants, never a blind swap of the character. `// Retry on 5xx: the API drops connections under load.` Replaces `// Retry on 5xx [em-dash] the API drops connections under load`.
 - **Short, sentence-case lines in a developer's voice.** `// Validate credentials before issuing a token.` Replaces stiff or loud wording: "This function is responsible for validating whether the supplied credentials are valid before continuing with the authentication process", `// MAIN LOGIC`.
 
 ## Keep these
@@ -54,6 +55,6 @@ Before finishing, check each comment you wrote or kept:
 
 - It says something the code does not.
 - It is one line, or two with a new fact on the second.
-- It reads as a short note from an engineer, in sentence case.
+- It reads as a short note from an engineer, in sentence case, with no em-dash.
 - Every preserved kind above is still there.
 - Outside comments, the diff is empty.

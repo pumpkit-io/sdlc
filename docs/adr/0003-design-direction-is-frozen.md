@@ -9,4 +9,4 @@
 
 ## Consequences
 
-`setup-sdlc` creates `DESIGN.md` (an empty skeleton, or extracted from the current UI by loading `update-design`) and skips the step in repos with no UI. `ui-craft`, `deslop` and `code-review` read it and report drift; none of them write it.
+`setup-sdlc` creates `DESIGN.md` (an empty skeleton, or extracted from the current UI by reading and following `update-design`'s instructions) and skips the step in repos with no UI. `ui-craft`, `deslop` and `code-review` read it and report drift; none of them write it.
