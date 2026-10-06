@@ -69,7 +69,7 @@ Without sub-agents, `code-review` runs its two reviews one after another, and `i
 | Type | Triggered by | Skills |
 |---|---|---|
 | Command | You, by typing it | setup-sdlc, update-design, grill-with-docs, to-spec, to-tickets, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
-| Automatic | The agent when relevant, or you | tdd, code-comments, diagnosing-bugs, code-review, pr, prose-style, prototype, domain-modeling, setup-pre-commit |
+| Automatic | The agent when relevant, or you | tdd, code-comments, diagnosing-bugs, code-review, pr, prose-style, ui-craft, prototype, domain-modeling, setup-pre-commit |
 | Reference | Other skills only | grilling, codebase-design, writing-for-agents |
 
 Plus one hook in Claude Code: git guardrails (below).

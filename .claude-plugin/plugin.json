@@ -31,6 +31,7 @@
     "./skills/code-review",
     "./skills/pr",
     "./skills/prose-style",
+    "./skills/ui-craft",
     "./skills/triage",
     "./skills/diagnosing-bugs",
     "./skills/improve-codebase-architecture",
