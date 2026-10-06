@@ -55,15 +55,29 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 - **Middle Man**: a class or function that mostly just delegates onward. → cut it, call the real target direct.
 - **Refused Bequest**: a subclass or implementer that ignores or overrides most of what it inherits. → drop the inheritance, use composition.
 
+Next to the smell baseline, the Standards axis carries a **slop baseline**: **Slop** in the comments, prose and UI the diff adds or changes. Its rules live in three skills; the Standards pass loads each one the diff reaches, and skips the rest:
+
+- **Comments** added or edited in any file → load the `code-comments` skill.
+- **Prose** added or edited: docs, `README`s, ADRs, glossary entries, specs, user-facing strings → load the `prose-style` skill.
+- **UI** added or edited: pages, components, styles, UI copy → load the `ui-craft` skill.
+
+The same two rules bind it:
+
+- **The repo overrides.** A documented repo standard always wins; where it endorses something the slop baseline would flag, suppress the slop finding.
+- **Always a judgement call.** Each slop finding is a labelled heuristic ("possible restating comment"), never a hard violation, and is reported only for lines the diff touches.
+
+When the diff touches UI and `DESIGN.md` exists at the repo root, the Standards pass also reports **Drift**: changed UI that contradicts `DESIGN.md`. Each case names the file and hunk, what the code does, and the `DESIGN.md` section and value it contradicts, then points to the two ways out: fix the code, or run `update-design` to adopt it. Drift is reported, never resolved: the review edits neither side.
+
 ### 4. Spawn both sub-agents in parallel
 
-If your agent can't spawn sub-agents, run the two reviews one after another in this session instead: Standards first, then Spec, each written up in full before the next one starts, and don't let the Standards findings shape the Spec pass. The prompts below become your own brief for each pass.
+If your agent can't spawn sub-agents, run the two reviews one after another in this session instead: Standards first, then Spec, each written up in full before the next one starts, and don't let the Standards findings shape the Spec pass. The prompts below become your own brief for each pass; for the Standards pass, load the slop-baseline skills the diff reaches in this session yourself.
 
 **Standards sub-agent prompt** should include:
 
 - The full diff command and commit list.
-- The list of standards-source files you found in step 3, **plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
-- The brief: "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Under 400 words."
+- The list of standards-source files you found in step 3, **plus the smell baseline and the slop baseline from step 3** pasted in full (the sub-agent has no other access to them).
+- Which slop-baseline skills the diff reaches (comments, prose, UI), with the instruction to load each one before reviewing, and whether `DESIGN.md` exists at the repo root.
+- The brief: "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); (b) any baseline smell you spot: name it and quote the hunk; (c) any slop in the comments, prose or UI the diff touches: name the pattern and the skill it comes from, and quote the line; and (d) any Drift between changed UI and `DESIGN.md`, naming the section and pointing to `update-design`, editing nothing. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells and slop are always judgement calls, and a documented repo standard overrides both baselines. Skip anything tooling enforces. Under 400 words."
 
 **Spec sub-agent prompt** should include:
 
