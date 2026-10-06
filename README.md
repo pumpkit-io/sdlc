@@ -123,7 +123,7 @@ Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes 
 | `docs/agents/*.md` | setup | to-spec, to-tickets, implement-spec, triage, code-review |
 | `CODING_STANDARDS.md` | you, retro | code-review only |
 | `.out-of-scope/` | triage | triage |
-| `DESIGN.md` (repos with a UI) | setup, update-design | UI work |
+| `DESIGN.md` (repos with a UI) | setup, update-design | UI work, code-review |
 
 Gemini CLI reads `GEMINI.md`: import `AGENTS.md` from it, or set `context.fileName` to include `AGENTS.md`.
 
