@@ -9,6 +9,8 @@ metadata:
     url: "https://github.com/humanlayer/skills/blob/main/plugins/show-me/skills/show-me/SKILL.md"
 ---
 
+Load the `prose-style` skill and write every line of the body in that style.
+
 Use this template for writing the PR body:
 
 ```markdown

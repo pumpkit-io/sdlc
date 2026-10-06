@@ -41,6 +41,8 @@ Create files lazily: only when you have something to write. If no `GLOSSARY.md` 
 
 ## During the session
 
+Load the `prose-style` skill and write every glossary entry and ADR in that style.
+
 ### Challenge against the glossary
 
 When the user uses a term that conflicts with the existing language in `GLOSSARY.md`, call it out immediately. "Your glossary defines 'cancellation' as X, but you seem to mean Y. Which is it?"
