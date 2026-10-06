@@ -68,7 +68,7 @@ Without sub-agents, `code-review` runs its two reviews one after another, and `i
 
 | Type | Triggered by | Skills |
 |---|---|---|
-| Command | You, by typing it | setup-sdlc, grill-with-docs, to-spec, to-tickets, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
+| Command | You, by typing it | setup-sdlc, update-design, grill-with-docs, to-spec, to-tickets, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
 | Automatic | The agent when relevant, or you | tdd, code-comments, diagnosing-bugs, code-review, pr, prose-style, prototype, domain-modeling, setup-pre-commit |
 | Reference | Other skills only | grilling, codebase-design, writing-for-agents |
 
@@ -123,6 +123,7 @@ Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes 
 | `docs/agents/*.md` | setup | to-spec, to-tickets, implement-spec, triage, code-review |
 | `CODING_STANDARDS.md` | you, retro | code-review only |
 | `.out-of-scope/` | triage | triage |
+| `DESIGN.md` (repos with a UI) | setup, update-design | UI work |
 
 Gemini CLI reads `GEMINI.md`: import `AGENTS.md` from it, or set `context.fileName` to include `AGENTS.md`.
 

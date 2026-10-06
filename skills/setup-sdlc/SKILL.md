@@ -1,6 +1,6 @@
 ---
 name: setup-sdlc
-description: "Configure this repo for the engineering skills: set up its issue tracker, any triage label overrides, and domain doc layout. Run once before first use of the other engineering skills."
+description: "Configure this repo for the engineering skills: set up its issue tracker, any triage label overrides, domain doc layout and, in repos with a UI, its DESIGN.md. Run once before first use of the other engineering skills."
 disable-model-invocation: true
 ---
 
@@ -11,6 +11,7 @@ Scaffold the per-repo configuration that the engineering skills assume:
 - **Issue tracker**: where issues live (GitHub by default; local markdown is also supported out of the box)
 - **Triage labels**: label strings for the five canonical triage roles, only when the repo doesn't use the role names themselves
 - **Domain docs**: where `GLOSSARY.md` and ADRs live, and the consumer rules for reading them
+- **Design direction**: a `DESIGN.md` at the repo root, only when the repo has a UI
 
 This is a prompt-driven skill, not a deterministic script. Explore, present what you found, confirm with the user, then write.
 
@@ -27,13 +28,14 @@ Look at the current repo to understand its starting state. Read whatever exists;
 - `docs/agents/`: does this skill's prior output already exist?
 - `.scratch/`: a sign that a local-markdown issue tracker convention is already in use
 - Is the `triage` skill installed? (a `triage` skill folder alongside this one, or `triage` in your available skills.) This decides whether Section B runs at all.
+- Does the repo have a UI? Signals: HTML, CSS or component files (`.tsx`, `.jsx`, `.vue`, `.svelte`), a frontend framework in `package.json`, mobile UI code (SwiftUI, Android layouts, Flutter widgets), templates rendered by a web server. A library, CLI or backend service has none. Is there already a `DESIGN.md` at the root? Together these decide Section D.
 - Monorepo signals: a `pnpm-workspace.yaml`, a `workspaces` field in `package.json`, or a populated `packages/*` with its own `src/`. These are present only in a genuinely large multi-package repo; their absence means single-context, which is almost every repo.
 
 ### 2. Present findings and ask
 
 Summarise what's present and what's missing. Then take the sections in order. One section, one answer, then the next.
 
-Lead each section with the recommended answer so the user can accept it in a word. Give a one-line explainer only when the choice genuinely branches; skip the section entirely when exploration already settled it (Section B when `triage` isn't installed, Section C when there's no monorepo).
+Lead each section with the recommended answer so the user can accept it in a word. Give a one-line explainer only when the choice genuinely branches; skip the section entirely when exploration already settled it (Section B when `triage` isn't installed, Section C when there's no monorepo, Section D when the repo has no UI).
 
 **Section A: Issue tracker.**
 
@@ -60,12 +62,25 @@ The defaults are the five canonical roles, each label string equal to its name: 
 
 Offer **multi-context** (a root `GLOSSARY-MAP.md` pointing to per-context `GLOSSARY.md` files) only when exploration found monorepo signals. Then confirm which layout they want.
 
+**Section D: Design direction.** Skip this section entirely if the repo has no UI (exploration told you): there is nothing for a direction to steer. If a `DESIGN.md` already exists, leave it as it is and mention that `update-design` changes it.
+
+Otherwise ask one question:
+
+> Create a `DESIGN.md` for the UI's design direction? (recommended: **extract it from the current UI**)
+
+- **Extract**: load the `update-design` skill and run it; it reads the UI, shows its draft as a diff and writes `DESIGN.md` only once the user approves. If your agent won't load it (it is user-invoked), read `update-design/SKILL.md` from the skill folder alongside this one and follow it.
+- **Empty skeleton**: write [design.md](./design.md) to `DESIGN.md` at the repo root as is, for the user to fill in (direction, palette, type, spacing, motion, voice).
+- **None**: write nothing.
+
+Extraction finishes inside this section, with its own approval. The skeleton waits for step 3 with the other drafts.
+
 ### 3. Confirm and edit
 
 Show the user a draft of:
 
 - The `## Agent skills` block to write to `AGENTS.md`, plus any `CLAUDE.md` edit step 4 calls for (adding `@AGENTS.md`, or removing an old block)
 - The contents of `docs/agents/issue-tracker.md`, `docs/agents/domain.md`, and `docs/agents/triage-labels.md` (the last only when the user gave label overrides in Section B)
+- `DESIGN.md`, only when the user chose the empty skeleton in Section D
 
 Let them edit before writing.
 
@@ -113,11 +128,12 @@ Then write the docs files using the seed templates in this skill folder as a sta
 - [issue-tracker-local.md](./issue-tracker-local.md): local-markdown issue tracker
 - [triage-labels.md](./triage-labels.md): label overrides (only if the user gave any)
 - [domain.md](./domain.md): domain doc consumer rules + layout
+- [design.md](./design.md): the `DESIGN.md` skeleton (only if the user chose it in Section D)
 
 For "other" issue trackers, write `docs/agents/issue-tracker.md` from scratch using the user's description.
 
 ### 5. Done
 
-Tell the user the setup is complete and which engineering skills will now read from these files. Mention they can edit `docs/agents/*.md` directly later; re-running this skill is only necessary if they want to switch issue trackers, restart from scratch, or move an older `CLAUDE.md` setup to `AGENTS.md`.
+Tell the user the setup is complete and which engineering skills will now read from these files. If a `DESIGN.md` now exists, add that it changes only through `update-design`. Mention they can edit `docs/agents/*.md` directly later; re-running this skill is only necessary if they want to switch issue trackers, restart from scratch, or move an older `CLAUDE.md` setup to `AGENTS.md`.
 
 Say which file got the block and whether `CLAUDE.md` is linked to it (by import or symlink). If there is no `CLAUDE.md`, add one line for Claude Code users: create a `CLAUDE.md` containing `@AGENTS.md`.
