@@ -68,11 +68,9 @@ Otherwise ask one question:
 
 > Create a `DESIGN.md` for the UI's design direction? (recommended: **extract it from the current UI**)
 
-- **Extract**: load the `update-design` skill and run it; it reads the UI, shows its draft as a diff and writes `DESIGN.md` only once the user approves. If your agent won't load it (it is user-invoked), read `update-design/SKILL.md` from the skill folder alongside this one and follow it.
-- **Empty skeleton**: write [design.md](./design.md) to `DESIGN.md` at the repo root as is, for the user to fill in (direction, palette, type, spacing, motion, voice).
+- **Extract**: read `update-design/SKILL.md` from the skill folder alongside this one and follow it now. It reads the UI, shows its draft as a diff and writes `DESIGN.md` only once the user approves, so extraction finishes inside this section.
+- **Empty skeleton**: take [design.md](./design.md) unchanged as the draft of `DESIGN.md` at the repo root, for the user to fill in later (direction, palette, type, spacing, motion, voice). Write nothing yet: the draft goes to step 3 with the other drafts and is written in step 4.
 - **None**: write nothing.
-
-Extraction finishes inside this section, with its own approval. The skeleton waits for step 3 with the other drafts.
 
 ### 3. Confirm and edit
 

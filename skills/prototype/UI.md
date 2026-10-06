@@ -50,7 +50,7 @@ Draft each variant. Hold each one to:
 - The page's purpose and the data it has access to.
 - The project's component library / styling system (TailwindCSS, shadcn, MUI, plain CSS, whatever).
 - A clear exported component name, e.g. `VariantA`, `VariantB`, `VariantC`.
-- Honest content: read `ui-craft/HONESTY.md` from the skill folder alongside this one, and only that file (the rest of `ui-craft` is polish a prototype skips). The person judging the variants sees real data or obvious placeholders, never invented numbers, people or claims.
+- Honest content: read `ui-craft/HONESTY.md` from the skill folder alongside this one, and only that file (the rest of `ui-craft` is polish a prototype skips). The person judging the variants sees real data or obvious placeholders, never invented numbers, people or claims. If that file isn't there, hold to the rule it carries: every number, name, testimonial or claim shown as fact is real content from the project or a clearly labelled placeholder (`[REAL DATA]`).
 
 Variants must be **structurally different**: different layout, different information hierarchy, different primary affordance, not just different colours. Three slightly-tweaked card grids isn't a UI prototype, it's wallpaper. If two drafts come out too similar, redo one with explicit "do not use a card grid" guidance.
 

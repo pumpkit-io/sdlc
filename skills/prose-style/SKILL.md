@@ -99,7 +99,7 @@ When a fact is unknown, say so in one clause, or leave it out. The tell is specu
 
 ### Em-dashes rewritten
 
-Write sentences that need no em-dash (U+2014). When editing, rewrite the sentence around each one into the punctuation it actually wants: a period for a new thought, a comma for a tight aside, a colon to introduce an explanation, parentheses for a true aside, or a conjunction. Never swap the character for a comma or hyphen blindly; read the sentence and restructure it. A spaced double hyphen (` -- `) standing in for one gets the same rewrite.
+Prose you write contains no em-dash (U+2014): write sentences that need none. When editing, rewrite the sentence around each one into the punctuation it actually wants: a period for a new thought, a comma for a tight aside, a colon to introduce an explanation, parentheses for a true aside, or a conjunction. Never swap the character for a comma or hyphen blindly; read the sentence and restructure it. A spaced double hyphen (` -- `) standing in for one gets the same rewrite.
 
 > Before: The cache [em-dash] which nobody owns [em-dash] is the bottleneck.
 > After: The cache is the bottleneck, and nobody owns it.
@@ -126,7 +126,7 @@ Use the short form: "to", "because", "now". The tells are filler phrases ("in or
 
 ## What not to flag
 
-A careful human writer hits several patterns above with no AI involved. When editing someone else's prose, these alone are not evidence of slop:
+A careful human writer hits several patterns above with no AI involved. When judging whether someone else's prose (the user's included) is slop, these alone are not evidence of it:
 
 - Perfect grammar and a consistent style.
 - Mixed casual and formal registers.
@@ -134,12 +134,12 @@ A careful human writer hits several patterns above with no AI involved. When edi
 - Formal or precise vocabulary outside the list in [Specific words over impressive ones](#specific-words-over-impressive-ones).
 - A single "however" or "additionally".
 - Curly quotes, which most editors insert automatically.
-- An em-dash on its own: many editors use them deliberately.
+- An em-dash on its own in their text: many editors use them deliberately. A sentence you write or rewrite has none (see [Em-dashes rewritten](#em-dashes-rewritten)).
 - One short emphatic sentence.
 - An unsourced claim on its own.
 - Secondhand text: quotations, titles, proper names, and phrases being discussed rather than used. Quoted text stays byte-identical.
 
-Look for clusters. One tell means little; four in a paragraph is slop.
+Look for clusters. One tell means little; four in a paragraph is slop. This leniency applies only to judging other people's text: every sentence you write or rewrite follows the entries above.
 
 ## Signs of human writing
 
@@ -161,5 +161,5 @@ Before handing over any prose, ask yourself, and fix what the answers turn up:
 
 1. What in this reads as generated? Check the clusters above.
 2. Does it state any fact, name, number, date, quote or claim that isn't in the source, the codebase, or what the user gave me?
-3. Does it contain an em-dash (U+2014)? One hit means the draft isn't done.
+3. Does any sentence I wrote or rewrote contain an em-dash (U+2014)? One hit means the draft isn't done. Only quoted text, and the user's voice when they chose to keep theirs, may hold one.
 4. Did I change any quoted text or the user's own voice without being asked?
