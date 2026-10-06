@@ -18,6 +18,7 @@
   ],
   "skills": [
     "./skills/setup-sdlc",
+    "./skills/update-design",
     "./skills/grill-with-docs",
     "./skills/domain-modeling",
     "./skills/to-spec",
