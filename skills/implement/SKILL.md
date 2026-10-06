@@ -8,6 +8,8 @@ Implement the work described by the user in the spec or tickets.
 
 Use /tdd where possible, at pre-agreed seams.
 
+Load the `code-comments` skill before writing code; every comment you write follows it.
+
 Run typechecking regularly, single test files regularly, and the full test suite once at the end.
 
 Once done, use /code-review to review the work.
