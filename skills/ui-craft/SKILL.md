@@ -114,6 +114,7 @@ Then reach the dials with these levers:
 Read each file when the work reaches it:
 
 - [HONESTY.md](HONESTY.md): before putting any number, name, claim, logo, image or data row on screen.
+- [ACCESSIBILITY.md](ACCESSIBILITY.md): when the work touches interactive UI (controls, forms, dialogs, focus) or colour. It holds the contrast checker.
 
 ## Self-check
 
@@ -124,3 +125,4 @@ Before handing over UI work, ask yourself, and fix what the answers turn up:
 3. Is every number, name and claim real or an obvious placeholder (the self-check in [HONESTY.md](HONESTY.md))?
 4. With a `DESIGN.md`: does the new UI follow it, did I report every case of Drift I saw with a pointer to `update-design`, and did I leave both `DESIGN.md` and the drifted code untouched?
 5. Did I run it and click through, or say why I couldn't?
+6. With interactive UI or colour in the change: does it pass the self-check in [ACCESSIBILITY.md](ACCESSIBILITY.md), with every contrast ratio computed rather than judged by eye?
