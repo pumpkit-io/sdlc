@@ -28,6 +28,7 @@
     "./skills/codebase-design",
     "./skills/code-review",
     "./skills/pr",
+    "./skills/prose-style",
     "./skills/triage",
     "./skills/diagnosing-bugs",
     "./skills/improve-codebase-architecture",

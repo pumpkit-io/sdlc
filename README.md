@@ -69,7 +69,7 @@ Without sub-agents, `code-review` runs its two reviews one after another, and `i
 | Type | Triggered by | Skills |
 |---|---|---|
 | Command | You, by typing it | setup-sdlc, grill-with-docs, to-spec, to-tickets, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
-| Automatic | The agent when relevant, or you | tdd, diagnosing-bugs, code-review, pr, prototype, domain-modeling, setup-pre-commit |
+| Automatic | The agent when relevant, or you | tdd, diagnosing-bugs, code-review, pr, prose-style, prototype, domain-modeling, setup-pre-commit |
 | Reference | Other skills only | grilling, codebase-design, writing-for-agents |
 
 Plus one hook in Claude Code: git guardrails (below).
@@ -135,6 +135,8 @@ In other agents, rely on the agent's own approval or sandbox mode for the same p
 ## Credits and upstream
 
 Forked from [mattpocock/skills](https://github.com/mattpocock/skills) at `d81f3a183412e71a5b1e84ca21bc1a35eea03a60` (2026-10-03), then trimmed to the skills above, flattened and renamed. The `pr` skill's summary visuals come from Dex Horthy's `show-me` skill (see [skills/pr/CREDITS.md](./skills/pr/CREDITS.md)).
+
+The slop-filtering skills are ported and adapted from [miqdadbadjuber/anti-slop](https://github.com/miqdadbadjuber/anti-slop) (MIT) at `91f12ec67e9de6043cfd93b846404986ba73c3f4`; each ported skill carries its own `CREDITS.md`. This repo never merges from it: to port a later change, diff upstream from that commit and apply it by hand.
 
 This repo no longer merges from upstream. To port an upstream improvement to a skill kept here:
 

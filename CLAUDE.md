@@ -28,6 +28,6 @@ Run `claude plugin validate .` after touching either manifest. Two warnings are 
 
 Skills that cannot work without per-repo config point to `/setup-sdlc`; the others degrade silently. See `docs/adr/0001-explicit-setup-pointer-only-for-hard-dependencies.md`.
 
-No em-dashes anywhere in this repo's prose (`SKILL.md` files, docs, `README.md`, ADRs, code comments). Where a sentence reaches for one, rewrite it instead with a comma, colon, period, parentheses, or a conjunction, whichever the sentence actually wants; never do a blind character substitution.
+All of this repo's prose follows the `prose-style` skill: `SKILL.md` files, docs, `README.md`, ADRs and code comments.
 
 This repo started as a fork of mattpocock/skills and no longer merges from it. To port an upstream improvement, see "Credits and upstream" in `README.md`.
