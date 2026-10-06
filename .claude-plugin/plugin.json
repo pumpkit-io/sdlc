@@ -32,6 +32,7 @@
     "./skills/pr",
     "./skills/prose-style",
     "./skills/ui-craft",
+    "./skills/deslop",
     "./skills/triage",
     "./skills/diagnosing-bugs",
     "./skills/improve-codebase-architecture",

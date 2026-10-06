@@ -1,0 +1,5 @@
+interface:
+  display_name: "Deslop"
+  short_description: "Clean slop from comments, prose and UI"
+policy:
+  allow_implicit_invocation: false
