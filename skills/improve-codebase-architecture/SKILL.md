@@ -36,7 +36,7 @@ Apply the **deletion test** to anything you suspect is shallow: would deleting i
 
 ### 2. Record candidates, then present them as an HTML report
 
-Each candidate gets two renderings: a markdown doc in the repo that an agent can read cold, and an HTML report for the user to look at. Write the doc first; the HTML draws its content from it.
+Each candidate gets two renderings: a markdown doc in the repo that an agent can read cold, and an HTML report for the user to look at. Write the doc first; the HTML draws its content from it. Load the `prose-style` skill and write both in that style.
 
 **Use GLOSSARY.md vocabulary for the domain, and the `/codebase-design` vocabulary for the architecture**, in both. If `GLOSSARY.md` defines "Order," talk about "the Order intake module," not "the FooBarHandler," and not "the Order service."
 

@@ -58,18 +58,18 @@ As of 2026-10. Agents change fast; open an issue if a row is out of date.
 | Skills install and run | yes | yes | yes | yes | yes | yes |
 | Command skills run only when you invoke them | yes | yes (via `agents/openai.yaml`) | yes | yes (VS Code) | no, the model may load them | no, the model may load them |
 | Reference skills hidden from menus | yes | no | no | yes (VS Code) | no | no |
-| Parallel sub-agents (code-review, implement-spec) | yes | not verified | not verified | not verified | not verified | not verified |
+| Parallel sub-agents (code-review, implement-spec, deslop) | yes | not verified | not verified | not verified | not verified | not verified |
 | Git guardrail hook | yes | no | no | no | no | no |
 | Instruction file it reads | `CLAUDE.md`, which imports `AGENTS.md` | `AGENTS.md` | `AGENTS.md` | not verified | `GEMINI.md` (point it at `AGENTS.md`) | `AGENTS.md` |
 
-Without sub-agents, `code-review` runs its two reviews one after another, and `implement-spec` stops and tells you to run `implement` one ticket at a time.
+Without sub-agents, `code-review` runs its two reviews one after another, `deslop` runs its waves in the current session, and `implement-spec` stops and tells you to run `implement` one ticket at a time.
 
 ## Skill types
 
 | Type | Triggered by | Skills |
 |---|---|---|
-| Command | You, by typing it | setup-sdlc, grill-with-docs, to-spec, to-tickets, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
-| Automatic | The agent when relevant, or you | tdd, diagnosing-bugs, code-review, pr, prototype, domain-modeling, setup-pre-commit |
+| Command | You, by typing it | setup-sdlc, update-design, deslop, grill-with-docs, to-spec, to-tickets, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
+| Automatic | The agent when relevant, or you | tdd, code-comments, diagnosing-bugs, code-review, pr, prose-style, ui-craft, prototype, domain-modeling, setup-pre-commit |
 | Reference | Other skills only | grilling, codebase-design, writing-for-agents |
 
 Plus one hook in Claude Code: git guardrails (below).
@@ -123,6 +123,7 @@ Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes 
 | `docs/agents/*.md` | setup | to-spec, to-tickets, implement-spec, triage, code-review |
 | `CODING_STANDARDS.md` | you, retro | code-review only |
 | `.out-of-scope/` | triage | triage |
+| `DESIGN.md` (repos with a UI) | setup, update-design | UI work, deslop, code-review |
 
 Gemini CLI reads `GEMINI.md`: import `AGENTS.md` from it, or set `context.fileName` to include `AGENTS.md`.
 
@@ -144,6 +145,8 @@ git diff d81f3a1 upstream/main -- skills/<bucket>/<name>/   # upstream still use
 ```
 
 Apply what's worth keeping to `skills/<name>/` by hand, then re-check the skill for references to skills that don't exist here.
+
+The slop rules are ported and adapted from [miqdadbadjuber/anti-slop](https://github.com/miqdadbadjuber/anti-slop) (MIT) at `91f12ec67e9de6043cfd93b846404986ba73c3f4`, and each ported skill carries its own `CREDITS.md`. This repo never merges from anti-slop either: to port a later change, diff anti-slop from that commit and apply what's worth keeping by hand.
 
 ## License
 

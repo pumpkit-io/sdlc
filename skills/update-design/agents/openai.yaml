@@ -1,0 +1,5 @@
+interface:
+  display_name: "Update design"
+  short_description: "Change DESIGN.md from the current UI"
+policy:
+  allow_implicit_invocation: false
