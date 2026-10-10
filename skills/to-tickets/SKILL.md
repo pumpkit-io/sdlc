@@ -39,15 +39,9 @@ Give each ticket its **blocking edges**: the other tickets that must complete be
 
 **Wide refactors are the exception to vertical slicing.** A **wide refactor** is one mechanical change (rename a column, retype a shared symbol) whose **blast radius** fans across the whole codebase, so a single edit breaks thousands of call sites at once and no vertical slice can land green. Don't force it into a tracer bullet; sequence it as **expand–contract**. First expand: add the new form beside the old so nothing breaks. Then migrate the call sites over in batches sized by blast radius (per package, per directory), each batch its own ticket blocked by the expand, keeping CI green batch to batch because the old form still exists. Finally contract: delete the old form once no caller remains, in a ticket blocked by every migrate batch. When even the batches can't stay green alone, keep the sequence but let them share an integration branch that all block a final integrate-and-verify ticket; green is promised only there.
 
-### 4. Check the breakdown yourself
+### 4. Check the breakdown
 
-The decisions were settled before this skill runs, so go straight from the draft to publishing. Before you publish, check the breakdown against three questions and fix what they turn up:
-
-- Is each ticket sized to one fresh context window, neither a fragment nor two tickets' work?
-- Does each ticket depend only on tickets that genuinely gate it?
-- Would merging or splitting any ticket make a slice more demoable on its own?
-
-A question the source left open goes into the body of the ticket it affects, as an open question for the implementer.
+Check every ticket against the vertical-slice rules, and check that each blocking edge names a ticket this one cannot start without. Fix what the check turns up. A question the source left open goes under **Open questions** in the ticket it affects.
 
 ### 5. Publish the tickets to the configured tracker
 
@@ -75,6 +69,8 @@ Do NOT close or modify any parent issue.
 - [ ] Acceptance criterion 1
 - [ ] Acceptance criterion 2
 
+**Open questions:** anything the source left unsettled that the implementer must decide. Omit when there are none.
+
 </local-ticket-template>
 
 <issue-template>
@@ -95,6 +91,10 @@ The end-to-end behaviour this ticket makes work, from the user's perspective, no
 ## Blocked by
 
 - A reference to each blocking ticket, or "None (can start immediately)".
+
+## Open questions
+
+Anything the source left unsettled that the implementer must decide. Omit this section when there are none.
 
 </issue-template>
 
