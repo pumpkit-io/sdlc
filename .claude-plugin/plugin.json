@@ -23,6 +23,7 @@
     "./skills/domain-modeling",
     "./skills/to-spec",
     "./skills/to-tickets",
+    "./skills/refresh-spec",
     "./skills/implement",
     "./skills/implement-spec",
     "./skills/tdd",
