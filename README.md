@@ -58,17 +58,17 @@ As of 2026-10. Agents change fast; open an issue if a row is out of date.
 | Skills install and run | yes | yes | yes | yes | yes | yes |
 | Command skills run only when you invoke them | yes | yes (via `agents/openai.yaml`) | yes | yes (VS Code) | no, the model may load them | no, the model may load them |
 | Reference skills hidden from menus | yes | no | no | yes (VS Code) | no | no |
-| Parallel sub-agents (code-review, implement-spec, deslop) | yes | not verified | not verified | not verified | not verified | not verified |
+| Parallel sub-agents (code-review, implement-spec, deslop, refresh-spec) | yes | not verified | not verified | not verified | not verified | not verified |
 | Git guardrail hook | yes | no | no | no | no | no |
 | Instruction file it reads | `CLAUDE.md`, which imports `AGENTS.md` | `AGENTS.md` | `AGENTS.md` | not verified | `GEMINI.md` (point it at `AGENTS.md`) | `AGENTS.md` |
 
-Without sub-agents, `code-review` runs its two reviews one after another, `deslop` runs its waves in the current session, and `implement-spec` stops and tells you to run `implement` one ticket at a time.
+Without sub-agents, `code-review` runs its two reviews one after another, `deslop` runs its waves in the current session, `refresh-spec` compares one ticket at a time, and `implement-spec` stops and tells you to run `implement` one ticket at a time.
 
 ## Skill types
 
 | Type | Triggered by | Skills |
 |---|---|---|
-| Command | You, by typing it | setup-sdlc, update-design, deslop, grill-with-docs, to-spec, to-tickets, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
+| Command | You, by typing it | setup-sdlc, update-design, deslop, grill-with-docs, to-spec, to-tickets, refresh-spec, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
 | Automatic | The agent when relevant, or you | tdd, code-comments, diagnosing-bugs, code-review, pr, prose-style, ui-craft, prototype, domain-modeling, setup-pre-commit |
 | Reference | Other skills only | grilling, codebase-design, writing-for-agents |
 
@@ -90,6 +90,7 @@ code-review main            final two-axis review of the whole branch
 "open a PR"                 body shaped by the pr skill
 ```
 
+- Tickets written a while ago: `refresh-spec <spec>` first, to update them to the code as it is now.
 - Small work that fits one session: `grill-with-docs`, then `implement` in the same session.
 - UI or state model unclear: during grilling run `handoff`, prototype in a fresh session, `handoff` back.
 

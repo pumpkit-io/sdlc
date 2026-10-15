@@ -1,0 +1,5 @@
+interface:
+  display_name: "Refresh Spec"
+  short_description: "Update a spec and its tickets to match the code"
+policy:
+  allow_implicit_invocation: false

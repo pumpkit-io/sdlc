@@ -9,8 +9,19 @@ The tool that hosts a repo's issues: GitHub Issues, GitLab Issues, a local `.scr
 _Avoid_: backlog manager, backlog backend, issue host
 
 **Issue**:
-A single tracked unit of work inside an **Issue tracker**: a bug, task, spec, or slice produced by `to-tickets`.
-_Avoid_: ticket (use only when quoting external systems that call them tickets, or for a slice produced by `to-tickets`)
+A single tracked unit of work inside an **Issue tracker**: a bug, task, **Spec**, or **Ticket**.
+_Avoid_: ticket (use only for a **Ticket**, or when quoting external systems that call issues tickets)
+
+**Spec**:
+An **Issue** that states a feature's problem, solution and user stories, published by `to-spec`.
+_Avoid_: PRD, epic
+
+**Ticket**:
+An **Issue** that is one vertical slice of a **Spec** or another plan, published by `to-tickets` with the blocking edges to the other **Tickets** it waits on.
+_Avoid_: slice, sub-issue (except when naming the tracker feature)
+
+**Stale**:
+Said of an **Issue** whose text no longer matches the code: work it asks for already exists, or names and places it cites have changed. An Issue that contradicts a choice the code made differently is not stale; it disagrees with the code, and only the user can say which side is wrong.
 
 **Triage role**:
 A canonical state-machine label applied to an **Issue** during triage (e.g. `needs-triage`, `ready-for-agent`). By default the role name is also the label string in the **Issue tracker**; `docs/agents/triage-labels.md`, when present, overrides that per role.
@@ -30,6 +41,7 @@ A contradiction between existing UI and the **Design direction**. It is reported
 
 - An **Issue tracker** holds many **Issues**
 - An **Issue** carries one **Triage role** at a time
+- A **Spec** has many **Tickets**; a **Ticket** belongs to at most one **Spec**
 - A repo has at most one **Design direction**; **Drift** is always measured against it
 
 ## Flagged ambiguities
