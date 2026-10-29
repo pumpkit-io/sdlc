@@ -45,7 +45,7 @@ Check every ticket against the vertical-slice rules, and check that each blockin
 
 ### 5. Publish the tickets to the configured tracker
 
-Load the `prose-style` skill and write every ticket body in that style.
+Load the `prose-style` skill and write every ticket body in that style. A ticket that builds UI points to the spec's UI Design section instead of restating the design. A ticket that builds UI points to the spec's UI Design section instead of restating the design.
 
 Publish the tickets. **How** depends on the tracker `/setup-sdlc` configured; the tickets are the same either way, only the shape of the blocking edges changes:
 

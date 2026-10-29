@@ -69,7 +69,7 @@ Without sub-agents, `review-changes` runs its two reviews one after another, `de
 | Type | Triggered by | Skills |
 |---|---|---|
 | Command | You, by typing it | setup-sdlc, update-design, deslop, grill-with-docs, to-spec, to-tickets, refresh-spec, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
-| Automatic | The agent when relevant, or you | tdd, code-comments, diagnosing-bugs, review-changes, pr, prose-style, ui-craft, prototype, domain-modeling, setup-pre-commit |
+| Automatic | The agent when relevant, or you | tdd, code-comments, diagnosing-bugs, review-changes, pr, prose-style, ui-design, prototype, domain-modeling, setup-pre-commit |
 | Reference | Other skills only | grilling, codebase-design, writing-for-agents |
 
 Plus one hook in Claude Code: git guardrails (below).
@@ -92,6 +92,7 @@ review-changes main         final two-axis review of the whole branch
 
 - Tickets written a while ago: `refresh-spec <spec>` first, to update them to the code as it is now.
 - Small work that fits one session: `grill-with-docs`, then `implement` in the same session.
+- Features with a UI: `ui-design` joins the grilling, its design plan goes into the spec, and implementers build to it.
 - UI or state model unclear: during grilling run `handoff`, prototype in a fresh session, `handoff` back.
 
 ### Bug
@@ -124,7 +125,7 @@ Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes 
 | `docs/agents/*.md` | setup | to-spec, to-tickets, implement-spec, triage, review-changes |
 | `CODING_STANDARDS.md` | you, retro | review-changes only |
 | `.out-of-scope/` | triage | triage |
-| `DESIGN.md` (repos with a UI) | setup, update-design | UI work, deslop, review-changes |
+| `DESIGN.md` (repos with a UI) | setup, update-design | ui-design, deslop, review-changes |
 
 Gemini CLI reads `GEMINI.md`: import `AGENTS.md` from it, or set `context.fileName` to include `AGENTS.md`.
 
@@ -148,6 +149,8 @@ git diff d81f3a1 upstream/main -- skills/<bucket>/<name>/   # upstream still use
 ```
 
 Apply what's worth keeping to `skills/<name>/` by hand, then re-check the skill for references to skills that don't exist here.
+
+`ui-design` is Anthropic's `frontend-design` skill (Apache 2.0) from [anthropics/skills](https://github.com/anthropics/skills) at `ca45fc496a3436251f191354091d557da31c15b5`, copied word for word with a section added for `DESIGN.md`, the spec flow and review. Its [CREDITS.md](./skills/ui-design/CREDITS.md) says how to port a later change.
 
 The slop rules are ported and adapted from [miqdadbadjuber/anti-slop](https://github.com/miqdadbadjuber/anti-slop) (MIT) at `91f12ec67e9de6043cfd93b846404986ba73c3f4`, and each ported skill carries its own `CREDITS.md`. This repo never merges from anti-slop either: to port a later change, diff anti-slop from that commit and apply what's worth keeping by hand.
 

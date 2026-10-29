@@ -61,7 +61,7 @@ Next to the smell baseline, the Standards axis carries a **slop baseline**: **Sl
 
 - **Comments** added or edited in any file → load the `code-comments` skill.
 - **Prose** added or edited: docs, `README`s, ADRs, glossary entries, specs, user-facing strings → load the `prose-style` skill.
-- **UI** added or edited: pages, components, styles, UI copy → load the `ui-craft` skill.
+- **UI** added or edited: pages, components, styles, UI copy → load the `ui-design` skill and review against its "Reviewing and cleaning UI" section.
 
 The same two rules bind it:
 

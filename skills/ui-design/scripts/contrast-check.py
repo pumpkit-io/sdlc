@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""WCAG 2.x contrast checker for the ui-craft skill.
+"""WCAG 2.x contrast checker for the ui-design skill.
 
 Usage:
     python3 contrast-check.py "#FFFFFF" "#777777"

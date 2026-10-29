@@ -14,7 +14,9 @@ The issue tracker should have been provided to you. If not, tell the user to run
 
 2. Sketch out the seams at which you're going to test the feature. Existing seams should be preferred to new ones. Use the highest seam possible. If new seams are needed, place them at the highest point you can. The fewer seams across the codebase, the better: the ideal number is one. Settle the seams yourself and record them under Testing Decisions.
 
-3. Load the `prose-style` skill. Write the spec in that style using the template below, then publish it to the project issue tracker. Apply the `ready-for-agent` triage label - no need for additional triage.
+3. When the feature has a UI, load the `ui-design` skill. Take the design plan settled in the conversation; when there is none, make one now, planning only, with its open choices recorded as open questions.
+
+4. Load the `prose-style` skill. Write the spec in that style using the template below, then publish it to the project issue tracker. Apply the `ready-for-agent` triage label - no need for additional triage.
 
 <spec-template>
 
@@ -53,6 +55,15 @@ A list of implementation decisions that were made. This can include:
 Do NOT include specific file paths or code snippets. They may end up being outdated very quickly.
 
 Exception: if a prototype produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it within the relevant decision and note briefly that it came from a prototype. Trim to the decision-rich parts, not a working demo, just the important bits.
+
+## UI Design
+
+Only when the feature has a UI. The design plan from step 3:
+
+- Palette as named hex values, typefaces and their roles, and principles, each marked as taken from `DESIGN.md` or new to this feature
+- The layout concept for each screen, with its ASCII wireframe
+- Each screen's empty, loading and error states
+- What the plan's review against the brief changed, and why
 
 ## Testing Decisions
 
