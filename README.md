@@ -33,7 +33,7 @@ The skills land in `.agents/skills/` (the folder Codex, Cursor, Gemini CLI, Copi
 
 ### Then, once per project repo
 
-Run `setup-sdlc` (see [Invoking skills](#invoking-skills) for your agent's syntax). It records the repo's issue tracker and doc layout in `AGENTS.md` and `docs/agents/`. On GitHub it also offers a CI workflow that checks every pull request for comment slop and runs `review-changes` on it with your Claude subscription.
+Run `setup-sdlc` (see [Invoking skills](#invoking-skills) for your agent's syntax). It records the repo's issue tracker and doc layout in `AGENTS.md` and `docs/agents/`. On GitHub it also offers a CI workflow that checks every pull request for comment slop and runs `review-changes` on it with your Claude subscription, failing the check when the review's verdict is blocking.
 
 Already set up a repo with an older version that wrote to `CLAUDE.md`? Re-run `setup-sdlc` once: it moves the block to `AGENTS.md`, where other agents can see it.
 
@@ -63,7 +63,7 @@ As of 2026-10. Agents change fast; open an issue if a row is out of date.
 | Comment slop check at commit | yes | no | no | no | no | no |
 | Instruction file it reads | `CLAUDE.md`, which imports `AGENTS.md` | `AGENTS.md` | `AGENTS.md` | not verified | `GEMINI.md` (point it at `AGENTS.md`) | `AGENTS.md` |
 
-Without sub-agents, `review-changes` runs its two reviews one after another, `deslop` runs its waves in the current session, `refresh-spec` compares one ticket at a time, and `implement-spec` stops and tells you to run `implement` one ticket at a time.
+Without sub-agents, `review-changes` runs its three reviews one after another, `deslop` runs its waves in the current session, `refresh-spec` compares one ticket at a time, and `implement-spec` stops and tells you to run `implement` one ticket at a time.
 
 ## Skill types
 
@@ -87,7 +87,7 @@ to-tickets                  vertical-slice tickets with blocking links
 (fresh session)
 implement <ticket>          one ticket per fresh session
   or implement-spec <spec>  all tickets in parallel worktrees, unattended
-review-changes main         final two-axis review of the whole branch
+review-changes main         final three-axis review of the whole branch
 "open a PR"                 body shaped by the pr skill
 ```
 
