@@ -58,18 +58,18 @@ As of 2026-10. Agents change fast; open an issue if a row is out of date.
 | Skills install and run | yes | yes | yes | yes | yes | yes |
 | Command skills run only when you invoke them | yes | yes (via `agents/openai.yaml`) | yes | yes (VS Code) | no, the model may load them | no, the model may load them |
 | Reference skills hidden from menus | yes | no | no | yes (VS Code) | no | no |
-| Parallel sub-agents (code-review, implement-spec, deslop, refresh-spec) | yes | not verified | not verified | not verified | not verified | not verified |
+| Parallel sub-agents (review-changes, implement-spec, deslop, refresh-spec) | yes | not verified | not verified | not verified | not verified | not verified |
 | Git guardrail hook | yes | no | no | no | no | no |
 | Instruction file it reads | `CLAUDE.md`, which imports `AGENTS.md` | `AGENTS.md` | `AGENTS.md` | not verified | `GEMINI.md` (point it at `AGENTS.md`) | `AGENTS.md` |
 
-Without sub-agents, `code-review` runs its two reviews one after another, `deslop` runs its waves in the current session, `refresh-spec` compares one ticket at a time, and `implement-spec` stops and tells you to run `implement` one ticket at a time.
+Without sub-agents, `review-changes` runs its two reviews one after another, `deslop` runs its waves in the current session, `refresh-spec` compares one ticket at a time, and `implement-spec` stops and tells you to run `implement` one ticket at a time.
 
 ## Skill types
 
 | Type | Triggered by | Skills |
 |---|---|---|
 | Command | You, by typing it | setup-sdlc, update-design, deslop, grill-with-docs, to-spec, to-tickets, refresh-spec, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
-| Automatic | The agent when relevant, or you | tdd, code-comments, diagnosing-bugs, code-review, pr, prose-style, ui-craft, prototype, domain-modeling, setup-pre-commit |
+| Automatic | The agent when relevant, or you | tdd, code-comments, diagnosing-bugs, review-changes, pr, prose-style, ui-craft, prototype, domain-modeling, setup-pre-commit |
 | Reference | Other skills only | grilling, codebase-design, writing-for-agents |
 
 Plus one hook in Claude Code: git guardrails (below).
@@ -86,7 +86,7 @@ to-tickets                  vertical-slice tickets with blocking links
 (fresh session)
 implement <ticket>          one ticket per fresh session
   or implement-spec <spec>  all tickets in parallel worktrees, unattended
-code-review main            final two-axis review of the whole branch
+review-changes main         final two-axis review of the whole branch
 "open a PR"                 body shaped by the pr skill
 ```
 
@@ -96,7 +96,7 @@ code-review main            final two-axis review of the whole branch
 
 ### Bug
 
-Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes with a regression test. Then `code-review main` and a PR. If it reports there is no good seam for the test, run `improve-codebase-architecture` on that area.
+Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes with a regression test. Then `review-changes main` and a PR. If it reports there is no good seam for the test, run `improve-codebase-architecture` on that area.
 
 ### Inbound (open-source repos, weekly)
 
@@ -121,10 +121,10 @@ Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes 
 | `CLAUDE.md` containing `@AGENTS.md` | you, setup | Claude Code |
 | `GLOSSARY.md`, `docs/adr/` | grill-with-docs, domain-modeling, improve-codebase-architecture | everything |
 | `docs/architecture-improvements/` (gitignored) | improve-codebase-architecture | a fresh session grilling one candidate |
-| `docs/agents/*.md` | setup | to-spec, to-tickets, implement-spec, triage, code-review |
-| `CODING_STANDARDS.md` | you, retro | code-review only |
+| `docs/agents/*.md` | setup | to-spec, to-tickets, implement-spec, triage, review-changes |
+| `CODING_STANDARDS.md` | you, retro | review-changes only |
 | `.out-of-scope/` | triage | triage |
-| `DESIGN.md` (repos with a UI) | setup, update-design | UI work, deslop, code-review |
+| `DESIGN.md` (repos with a UI) | setup, update-design | UI work, deslop, review-changes |
 
 Gemini CLI reads `GEMINI.md`: import `AGENTS.md` from it, or set `context.fileName` to include `AGENTS.md`.
 

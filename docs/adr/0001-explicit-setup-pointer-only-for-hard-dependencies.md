@@ -4,7 +4,7 @@ Engineering skills depend on per-repo config (issue tracker, domain doc layout, 
 
 We split these into **hard-dependency** and **soft-dependency** skills:
 
-- **Hard dependency** (`to-spec`, `to-tickets`, `implement-spec`, `code-review`): include an explicit one-liner: _"… should have been provided to you; run `/setup-sdlc` if not."_ Without the tracker config, output is wrong, not just fuzzy.
+- **Hard dependency** (`to-spec`, `to-tickets`, `implement-spec`, `review-changes`): include an explicit one-liner: _"… should have been provided to you; run `/setup-sdlc` if not."_ Without the tracker config, output is wrong, not just fuzzy.
 - **Soft dependency** (`diagnosing-bugs`, `tdd`, `improve-codebase-architecture`): reference "the project's domain glossary" and "ADRs in the area you're touching" in vague prose only. If the docs aren't there, the skill still works; output is just less sharp.
 
 The split keeps soft-dependency skills token-light and avoids cargo-culting the setup pointer into places where it isn't load-bearing.

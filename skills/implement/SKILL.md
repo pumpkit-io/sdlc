@@ -15,6 +15,6 @@ Load the `code-comments` skill before writing code; every comment you write foll
 
 Run typechecking regularly, single test files regularly, and the full test suite once at the end.
 
-Once done, use /code-review to review the work. When you worked from the conversation, hand it the brief as the spec.
+Once done, load the `review-changes` skill to review the work. When you worked from the conversation, hand it the brief as the spec.
 
 Commit your work to the current branch.

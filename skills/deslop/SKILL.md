@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 Clean existing **Slop** out of a file or folder. You triage in your own context, then run one **wave** per concern (comments, prose, UI). Inside a wave, sub-agents each own a small batch of files and load exactly one skill; waves run one after another, so no two agents ever edit the same file at once. You edit the working tree directly and the user reviews the result with `git diff`.
 
-The scope is what the three skills cover, accessibility fixes from `ui-craft` included. Code-level design (naming, structure, wrappers, error handling) is a smell for `code-review`: this skill names what it notices and leaves the code alone.
+The scope is what the three skills cover, accessibility fixes from `ui-craft` included. Code-level design (naming, structure, wrappers, error handling) is a smell for `review-changes`: this skill names what it notices and leaves the code alone.
 
 ## Process
 
@@ -63,7 +63,7 @@ Run `git diff --stat` and confirm two things: every changed file was in some bat
 
 ### 6. Summarise
 
-End with one section per wave that ran: the files it changed and the kinds of slop it removed, plus anything it left in place and why (a kept workaround comment, a placeholder that needs a real number) and any code-level smell it noticed, as a pointer to `code-review`. Write it to the `prose-style` skill.
+End with one section per wave that ran: the files it changed and the kinds of slop it removed, plus anything it left in place and why (a kept workaround comment, a placeholder that needs a real number) and any code-level smell it noticed, as a pointer to `review-changes`. Write it to the `prose-style` skill.
 
 Then a **Drift** section when any was found: each case as the sub-agent reported it, with the two ways out: fix the code to match `DESIGN.md`, or run `update-design` to adopt the code as the new direction. Neither side was edited.
 
