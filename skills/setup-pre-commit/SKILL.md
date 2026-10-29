@@ -1,6 +1,6 @@
 ---
 name: setup-pre-commit
-description: Set up Husky pre-commit hooks with lint-staged (Prettier), type checking, and tests in the current repo. Use when user wants to add pre-commit hooks, set up Husky, configure lint-staged, or add commit-time formatting/typechecking/testing.
+description: Set up Husky pre-commit hooks with lint-staged (Prettier) and type checking in the current repo, leaving tests to CI. Use when user wants to add pre-commit hooks, set up Husky, configure lint-staged, or add commit-time formatting/typechecking/testing.
 ---
 
 # Setup Pre-Commit Hooks
@@ -10,7 +10,9 @@ description: Set up Husky pre-commit hooks with lint-staged (Prettier), type che
 - **Husky** pre-commit hook
 - **lint-staged** running Prettier on all staged files
 - **Prettier** config (if missing)
-- **typecheck** and **test** scripts in the pre-commit hook
+- the **typecheck** script in the pre-commit hook
+
+Tests don't run on commit. A full test run on every commit slows each commit by however long the suite takes, and CI runs it anyway as the check that blocks a merge.
 
 ## Steps
 
@@ -41,10 +43,11 @@ Write this file (no shebang needed for Husky v9+):
 ```
 npx lint-staged
 npm run typecheck
-npm run test
 ```
 
-**Adapt**: Replace `npm` with detected package manager. If repo has no `typecheck` or `test` script in package.json, omit those lines and tell the user.
+**Adapt**: Replace `npm` with detected package manager. If repo has no `typecheck` script in package.json, omit that line and tell the user.
+
+Then check that CI runs the `test` script on pull requests. If it doesn't, tell the user the tests run nowhere and offer to add a CI job, or to put `npm run test` in `.husky/pre-push` as a stopgap.
 
 ### 5. Create `.lintstagedrc`
 
@@ -88,4 +91,4 @@ This will run through the new pre-commit hooks: a good smoke test that everythin
 
 - Husky v9+ doesn't need shebangs in hook files
 - `prettier --ignore-unknown` skips files Prettier can't parse (images, etc.)
-- The pre-commit runs lint-staged first (fast, staged-only), then full typecheck and tests
+- The pre-commit runs lint-staged first (fast, staged-only), then a full typecheck

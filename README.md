@@ -130,7 +130,9 @@ Gemini CLI reads `GEMINI.md`: import `AGENTS.md` from it, or set `context.fileNa
 
 ## Git guardrails
 
-The guardrail runs in Claude Code only, as an always-on `PreToolUse` hook shipped with the plugin (`hooks/block-dangerous-git.sh`, needs `jq`). It blocks: force pushes, pushes to main/master, remote branch deletion, `reset --hard`, `clean -f`, `branch -D`, `checkout .` / `restore .`, `gh pr merge`, `gh repo delete` and visibility changes. Pushing feature branches and opening PRs stays allowed, so unattended runs can publish their work while merging stays with the human. Change `PUSH_POLICY` in the script to `none` to block all pushes.
+The guardrail runs in Claude Code only, as an always-on `PreToolUse` hook shipped with the plugin (`hooks/block-dangerous-git.sh`, needs `jq` and `perl`). It blocks force, mirror and delete pushes, `reset --hard`, `clean -f`, `branch -D`, `checkout .` / `restore .`, skipping git hooks (`--no-verify`, `-c core.hooksPath`), `gh pr merge`, `gh repo delete`, visibility changes, and `gh api` calls that merge a PR, change rulesets or branch protection, or delete a repository. Pushes are otherwise allowed, to any branch: whether `main` takes direct pushes is up to each repo's branch protection. Merging stays with the human. Change `PUSH_POLICY` in the script to `none` to block all pushes.
+
+The hook checks the arguments of each `git` and `gh` command in the line, so a commit message, PR body or heredoc that mentions `reset --hard` doesn't trip it, and neither does `gh pr create --base main` chained after a push. It also checks commands run through `sh -c`, `eval` and a heredoc fed to a shell.
 
 In other agents, rely on the agent's own approval or sandbox mode for the same protection. [ADR 0002](./docs/adr/0002-agent-neutral-skills-single-native-package.md) explains why the hook isn't ported yet.
 
