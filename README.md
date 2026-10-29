@@ -33,7 +33,7 @@ The skills land in `.agents/skills/` (the folder Codex, Cursor, Gemini CLI, Copi
 
 ### Then, once per project repo
 
-Run `setup-sdlc` (see [Invoking skills](#invoking-skills) for your agent's syntax). It records the repo's issue tracker and doc layout in `AGENTS.md` and `docs/agents/`.
+Run `setup-sdlc` (see [Invoking skills](#invoking-skills) for your agent's syntax). It records the repo's issue tracker and doc layout in `AGENTS.md` and `docs/agents/`. On GitHub it also offers a CI workflow that checks every pull request for comment slop and runs `review-changes` on it with your Claude subscription.
 
 Already set up a repo with an older version that wrote to `CLAUDE.md`? Re-run `setup-sdlc` once: it moves the block to `AGENTS.md`, where other agents can see it.
 
@@ -127,6 +127,7 @@ Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes 
 | `CODING_STANDARDS.md` | you, retro | review-changes only |
 | `.out-of-scope/` | triage | triage |
 | `DESIGN.md` (repos with a UI) | setup, update-design | ui-design, deslop, review-changes |
+| `.github/workflows/sdlc-review.yml` (GitHub repos) | setup | GitHub Actions, on every pull request |
 
 Gemini CLI reads `GEMINI.md`: import `AGENTS.md` from it, or set `context.fileName` to include `AGENTS.md`.
 
