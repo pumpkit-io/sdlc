@@ -2,7 +2,7 @@
 
 Agent skills for SDLC (Software Development LifeCycle): idea, spec, tickets, code, review, PR, with a glossary and ADRs kept current along the way. They work in any project repo.
 
-The skills are plain [Agent Skills](https://agentskills.io), so they work in any coding agent that supports the standard. Claude Code gets them as a plugin, together with a git guardrail hook. Codex, Cursor, Gemini CLI, Copilot, OpenCode and other agents install the same skills with `npx skills`.
+The skills are plain [Agent Skills](https://agentskills.io), so they work in any coding agent that supports the standard. Claude Code gets them as a plugin, together with two hooks: a git guardrail and a comment slop check. Codex, Cursor, Gemini CLI, Copilot, OpenCode and other agents install the same skills with `npx skills`.
 
 ## Install
 
@@ -19,7 +19,7 @@ claude plugin install sdlc@pumpkit-io --scope user
 
 Then run `/reload-plugins` or restart. Third-party marketplaces don't auto-update by default: enable it in `/plugin`, Marketplaces tab, or run `claude plugin update sdlc@pumpkit-io`.
 
-Prefer editable files? Use the `npx` install below instead of the plugin (`-a claude-code`); you lose the git guardrail hook.
+Prefer editable files? Use the `npx` install below instead of the plugin (`-a claude-code`); you lose both hooks.
 
 ### Codex, Cursor, Gemini CLI, Copilot, OpenCode and other agents
 
@@ -60,6 +60,7 @@ As of 2026-10. Agents change fast; open an issue if a row is out of date.
 | Reference skills hidden from menus | yes | no | no | yes (VS Code) | no | no |
 | Parallel sub-agents (review-changes, implement-spec, deslop, refresh-spec) | yes | not verified | not verified | not verified | not verified | not verified |
 | Git guardrail hook | yes | no | no | no | no | no |
+| Comment slop check at commit | yes | no | no | no | no | no |
 | Instruction file it reads | `CLAUDE.md`, which imports `AGENTS.md` | `AGENTS.md` | `AGENTS.md` | not verified | `GEMINI.md` (point it at `AGENTS.md`) | `AGENTS.md` |
 
 Without sub-agents, `review-changes` runs its two reviews one after another, `deslop` runs its waves in the current session, `refresh-spec` compares one ticket at a time, and `implement-spec` stops and tells you to run `implement` one ticket at a time.
@@ -72,7 +73,7 @@ Without sub-agents, `review-changes` runs its two reviews one after another, `de
 | Automatic | The agent when relevant, or you | tdd, code-comments, diagnosing-bugs, review-changes, pr, prose-style, ui-design, prototype, domain-modeling, setup-pre-commit |
 | Reference | Other skills only | grilling, codebase-design, writing-for-agents |
 
-Plus one hook in Claude Code: git guardrails (below).
+Plus two hooks in Claude Code: git guardrails and the comment slop check (below).
 
 ## Flows
 
@@ -136,6 +137,12 @@ The guardrail runs in Claude Code only, as an always-on `PreToolUse` hook shippe
 The hook checks the arguments of each `git` and `gh` command in the line, so a commit message, PR body or heredoc that mentions `reset --hard` doesn't trip it, and neither does `gh pr create --base main` chained after a push. It also checks commands run through `sh -c`, `eval` and a heredoc fed to a shell.
 
 In other agents, rely on the agent's own approval or sandbox mode for the same protection. [ADR 0002](./docs/adr/0002-agent-neutral-skills-single-native-package.md) explains why the hook isn't ported yet.
+
+## Comment slop check
+
+A second `PreToolUse` hook (`hooks/check-commit-slop.sh`, needs `jq` and `perl`) runs before every `git commit` in Claude Code. It checks the comment lines the commit adds for the slop the `code-comments` skill bans that a pattern can catch: em-dashes, banner headers, `Step 1:` narration, emoji, `// end if` markers, empty labels, TODOs that name no task, and doc lines that only repeat a parameter's name. On a finding it blocks the commit and lists the lines, so the agent fixes them and commits again. Judgement calls, like a comment that restates its line, stay with `review-changes`. A false positive can be committed with `SDLC_ALLOW_SLOP=1 git commit ...`, and the agent has to say why.
+
+The check itself is `hooks/comment-slop.pl`, which reads any unified diff. The CI workflow `setup-sdlc` installs runs it on every pull request, so commits from other agents and from people are checked too.
 
 ## Credits and upstream
 
