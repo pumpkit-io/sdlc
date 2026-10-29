@@ -11,10 +11,10 @@ Implement the work from its source:
 
 Use /tdd where possible, at the seams the spec or brief agreed.
 
-Load the `code-comments` skill before writing code; every comment you write follows it.
+Load the `code-comments` skill before writing code; every comment you write follows it. When the work builds UI, load the `ui-design` skill and build to the spec's UI Design section, or to the design plan the session settled.
 
 Run typechecking regularly, single test files regularly, and the full test suite once at the end.
 
-Once done, use /code-review to review the work. When you worked from the conversation, hand it the brief as the spec.
+Once done, load the `review-changes` skill to review the work. When you worked from the conversation, hand it the brief as the spec.
 
 Commit your work to the current branch.

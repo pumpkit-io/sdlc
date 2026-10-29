@@ -1,6 +1,6 @@
 ---
 name: setup-sdlc
-description: "Configure this repo for the engineering skills: set up its issue tracker, any triage label overrides, domain doc layout and, in repos with a UI, its DESIGN.md. Run once before first use of the other engineering skills."
+description: "Configure this repo for the engineering skills: set up its issue tracker, any triage label overrides, domain doc layout, its CI review workflow on GitHub and, in repos with a UI, its DESIGN.md. Run once before first use of the other engineering skills."
 disable-model-invocation: true
 ---
 
@@ -12,6 +12,8 @@ Scaffold the per-repo configuration that the engineering skills assume:
 - **Triage labels**: label strings for the five canonical triage roles, only when the repo doesn't use the role names themselves
 - **Domain docs**: where `GLOSSARY.md` and ADRs live, and the consumer rules for reading them
 - **Design direction**: a `DESIGN.md` at the repo root, only when the repo has a UI
+- **Code comments**: a line in `AGENTS.md` so every session, in any flow, writes comments by the `code-comments` skill
+- **CI review**: a GitHub Actions workflow that checks every pull request for comment slop and runs `review-changes` on it, only on GitHub
 
 This is a prompt-driven skill, not a deterministic script. Explore, present what you found, confirm with the user, then write.
 
@@ -29,13 +31,14 @@ Look at the current repo to understand its starting state. Read whatever exists;
 - `.scratch/`: a sign that a local-markdown issue tracker convention is already in use
 - Is the `triage` skill installed? (a `triage` skill folder alongside this one, or `triage` in your available skills.) This decides whether Section B runs at all.
 - Does the repo have a UI? Signals: HTML, CSS or component files (`.tsx`, `.jsx`, `.vue`, `.svelte`), a frontend framework in `package.json`, mobile UI code (SwiftUI, Android layouts, Flutter widgets), templates rendered by a web server. A library, CLI or backend service has none. Is there already a `DESIGN.md` at the root? Together these decide Section D.
+- `.github/workflows/sdlc-review.yml`: is the CI review already installed?
 - Monorepo signals: a `pnpm-workspace.yaml`, a `workspaces` field in `package.json`, or a populated `packages/*` with its own `src/`. These are present only in a genuinely large multi-package repo; their absence means single-context, which is almost every repo.
 
 ### 2. Present findings and ask
 
 Summarise what's present and what's missing. Then take the sections in order. One section, one answer, then the next.
 
-Lead each section with the recommended answer so the user can accept it in a word. Give a one-line explainer only when the choice genuinely branches; skip the section entirely when exploration already settled it (Section B when `triage` isn't installed, Section C when there's no monorepo, Section D when the repo has no UI).
+Lead each section with the recommended answer so the user can accept it in a word. Give a one-line explainer only when the choice genuinely branches; skip the section entirely when exploration already settled it (Section B when `triage` isn't installed, Section C when there's no monorepo, Section D when the repo has no UI, Section E when the tracker isn't GitHub).
 
 **Section A: Issue tracker.**
 
@@ -72,6 +75,14 @@ Otherwise ask one question:
 - **Empty skeleton**: take [design.md](./design.md) unchanged as the draft of `DESIGN.md` at the repo root, for the user to fill in later (direction, palette, type, spacing, motion, voice). Write nothing yet: the draft goes to step 3 with the other drafts and is written in step 4.
 - **None**: write nothing.
 
+**Section E: CI review.** Skip this section when the repo isn't on GitHub. If `.github/workflows/sdlc-review.yml` already exists, offer to replace it with the current template and show the diff first.
+
+Otherwise ask one question:
+
+> Add a CI workflow that reviews every pull request? (recommended: **yes**)
+
+On **yes**, take [sdlc-review.yml](./sdlc-review.yml) unchanged as the draft of `.github/workflows/sdlc-review.yml`; it goes to step 3 with the other drafts. Explain its two jobs in one line each: `comment-slop` fails when a pull request adds comment slop a pattern can catch, and `review` runs `review-changes` with Claude Code and posts the report as one pull request comment, updated on every push. The `review` job needs a `CLAUDE_CODE_OAUTH_TOKEN` secret: the user creates the token with `claude setup-token`, then adds it with `gh secret set CLAUDE_CODE_OAUTH_TOKEN`. Never ask for the token or handle it yourself. On a public repo, say that the `review` job skips pull requests from forks, so outsiders can't spend the user's usage.
+
 ### 3. Confirm and edit
 
 Show the user a draft of:
@@ -79,6 +90,7 @@ Show the user a draft of:
 - The `## Agent skills` block to write to `AGENTS.md`, plus any `CLAUDE.md` edit step 4 calls for (adding `@AGENTS.md`, or removing an old block)
 - The contents of `docs/agents/issue-tracker.md`, `docs/agents/domain.md`, and `docs/agents/triage-labels.md` (the last only when the user gave label overrides in Section B)
 - `DESIGN.md`, only when the user chose the empty skeleton in Section D
+- `.github/workflows/sdlc-review.yml`, only when the user said yes in Section E
 
 Let them edit before writing.
 
@@ -115,6 +127,10 @@ The block:
 ### Domain docs
 
 [one-line summary of layout: "single-context" or "multi-context"]. See `docs/agents/domain.md`.
+
+### Code comments
+
+Load the `code-comments` skill before writing or editing any comment.
 ```
 
 Include the `### Triage labels` sub-block, and write `docs/agents/triage-labels.md`, only when the user gave label overrides in Section B. With the default labels, both are omitted.
@@ -127,11 +143,12 @@ Then write the docs files using the seed templates in this skill folder as a sta
 - [triage-labels.md](./triage-labels.md): label overrides (only if the user gave any)
 - [domain.md](./domain.md): domain doc consumer rules + layout
 - [design.md](./design.md): the `DESIGN.md` skeleton (only if the user chose it in Section D)
+- [sdlc-review.yml](./sdlc-review.yml): the CI review workflow, written to `.github/workflows/sdlc-review.yml` (only if the user said yes in Section E)
 
 For "other" issue trackers, write `docs/agents/issue-tracker.md` from scratch using the user's description.
 
 ### 5. Done
 
-Tell the user the setup is complete and which engineering skills will now read from these files. If a `DESIGN.md` now exists, add that it changes only through `update-design`. Mention they can edit `docs/agents/*.md` directly later; re-running this skill is only necessary if they want to switch issue trackers, restart from scratch, or move an older `CLAUDE.md` setup to `AGENTS.md`.
+Tell the user the setup is complete and which engineering skills will now read from these files. If a `DESIGN.md` now exists, add that it changes only through `update-design`. If the CI review was installed, remind the user to add the `CLAUDE_CODE_OAUTH_TOKEN` secret before the next pull request. Mention they can edit `docs/agents/*.md` directly later; re-running this skill is only necessary if they want to switch issue trackers, restart from scratch, or move an older `CLAUDE.md` setup to `AGENTS.md`.
 
 Say which file got the block and whether `CLAUDE.md` is linked to it (by import or symlink). If there is no `CLAUDE.md`, add one line for Claude Code users: create a `CLAUDE.md` containing `@AGENTS.md`.

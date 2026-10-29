@@ -7,7 +7,7 @@ A comment earns its place by carrying something the code cannot show: the reason
 
 ## Scope guardrail
 
-Only comments change. Executable code, identifiers, imports, formatting, indentation, whitespace, control flow and logic stay byte-identical. When removing a trailing comment, remove only the comment and the spaces before it. When the real fix is in the code (a confusing flow, a misleading name), leave the code alone: that is a smell for `code-review`, not a comment fix.
+Only comments change. Executable code, identifiers, imports, formatting, indentation, whitespace, control flow and logic stay byte-identical. When removing a trailing comment, remove only the comment and the spaces before it. When the real fix is in the code (a confusing flow, a misleading name), leave the code alone: that is a smell for `review-changes`, not a comment fix.
 
 ## Write these
 

@@ -1,6 +1,6 @@
 # Honest UI content
 
-Everything a UI presents as fact comes from real information or is a placeholder that reads as one. A page that shows invented numbers, people or claims lies to whoever looks at it, and in a prototype it lies to the person judging the design. This file stands on its own: `prototype` reads it without the rest of `ui-craft`.
+Everything a UI presents as fact comes from real information or is a placeholder that reads as one. A page that shows invented numbers, people or claims lies to whoever looks at it, and in a prototype it lies to the person judging the design. This file stands on its own: `prototype` reads it without the rest of `ui-design`.
 
 ## The rule
 

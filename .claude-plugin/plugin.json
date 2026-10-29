@@ -1,6 +1,6 @@
 {
   "name": "sdlc",
-  "description": "Agent skills for the software development lifecycle: grill, spec, tickets, TDD, two-axis code review, PRs, triage, bug diagnosis and architecture upkeep.",
+  "description": "Agent skills for the software development lifecycle: grill, spec, tickets, TDD, UI design, two-axis code review, PRs, triage, bug diagnosis and architecture upkeep.",
   "author": {
     "name": "pumpkit-io",
     "url": "https://pumpkit.io"
@@ -29,10 +29,10 @@
     "./skills/tdd",
     "./skills/code-comments",
     "./skills/codebase-design",
-    "./skills/code-review",
+    "./skills/review-changes",
     "./skills/pr",
     "./skills/prose-style",
-    "./skills/ui-craft",
+    "./skills/ui-design",
     "./skills/deslop",
     "./skills/triage",
     "./skills/diagnosing-bugs",

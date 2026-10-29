@@ -1,5 +1,5 @@
 ---
-name: code-review
+name: review-changes
 description: "Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes: Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/spec asked for?). Runs both reviews in parallel sub-agents and reports them side by side. Use when the user wants to review a branch, a PR, work-in-progress changes, or asks to \"review since X\"."
 ---
 
@@ -11,6 +11,8 @@ Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 Both axes run as **parallel sub-agents** (or one after another when your agent can't spawn them; see step 4) so they don't pollute each other's context, then this skill aggregates their findings.
 
 The issue tracker should have been provided to you. If `docs/agents/issue-tracker.md` is missing, tell the user to run `/setup-sdlc`.
+
+When nobody can answer (a CI job), never ask: take the fixed point and the spec source from the caller, skip the Spec axis when no spec turns up, and say in the report what you assumed.
 
 ## Process
 
@@ -59,7 +61,7 @@ Next to the smell baseline, the Standards axis carries a **slop baseline**: **Sl
 
 - **Comments** added or edited in any file → load the `code-comments` skill.
 - **Prose** added or edited: docs, `README`s, ADRs, glossary entries, specs, user-facing strings → load the `prose-style` skill.
-- **UI** added or edited: pages, components, styles, UI copy → load the `ui-craft` skill.
+- **UI** added or edited: pages, components, styles, UI copy → load the `ui-design` skill and review against its "Reviewing and cleaning UI" section.
 
 The same two rules bind it:
 
