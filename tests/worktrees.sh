@@ -174,6 +174,15 @@ pushed="$(cd "$repo" && wt create feat/pushed 2>/dev/null | tail -n 1)"
 git -C "$pushed" push -q -u origin feat/pushed 2>/dev/null
 check "pushed branch finishes" "0" "$(cd "$repo" && wt finish "$pushed" >/dev/null 2>&1; echo $?)"
 
+integ="$(cd "$repo" && wt create feat/integ 2>/dev/null | tail -n 1)"
+impl="$(cd "$repo" && wt create integ-t1 feat/integ 2>/dev/null | tail -n 1)"
+git -C "$impl" commit -q --allow-empty -m ticket
+check "unmerged into integration refused" "5" "$(cd "$repo" && wt finish "$impl" --merged-into feat/integ >/dev/null 2>&1; echo $?)"
+git -C "$integ" merge -q --no-ff --no-edit integ-t1
+out="$(cd "$repo" && wt finish "$impl" --merged-into feat/integ 2>&1)"; code=$?
+check "merged into integration finishes" "0" "$code"
+check "implementer branch deleted" "" "$(git -C "$repo" branch --list integ-t1)"
+
 echo "# sweep"
 sw="$(new_repo sweep)"
 merged="$(cd "$sw" && wt create feat/merged 2>/dev/null | tail -n 1)"

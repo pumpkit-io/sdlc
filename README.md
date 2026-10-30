@@ -114,7 +114,7 @@ Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes 
 
 - Keep grilling, spec and tickets in one session; start a fresh session (`/clear` in Claude Code) only after `to-tickets`.
 - One ticket per fresh session.
-- `implement` commits to the current branch: create the branch first.
+- `implement` finds or creates its worktree and commits to that worktree's branch.
 
 ## Files the skills expect in each project repo
 

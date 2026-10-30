@@ -7,7 +7,7 @@
 #   worktree.sh lock [--take-over] <worktree> <description>
 #   worktree.sh release <worktree>
 #   worktree.sh list                       tab-separated: slug, branch, ahead, behind, lock, lock age, dev stack
-#   worktree.sh finish <worktree> [--pr-open]
+#   worktree.sh finish <worktree> [--pr-open | --merged-into <branch>]
 #   worktree.sh sweep
 #
 # Exit codes: 0 done, 1 refused (reason on stderr), 2 usage, 3 lock busy, 4 lock stale, 5 unmerged and unpushed.
@@ -202,7 +202,7 @@ cmd_list() {
 
 # Finishes one worktree. Exit 1, 3 and 5 refuse with the reason on stderr; sweep reports the same reasons.
 finish_one() {
-  local wt="$1" pr_open="$2" main default branch here dirty
+  local wt="$1" pr_open="$2" into="${3:-}" main default branch here dirty
   main="$(cd "$wt" && main_checkout)"
   [ "$wt" = "$main" ] && { say "$wt is the main checkout."; return 1; }
   here="$(pwd -P)"
@@ -218,12 +218,12 @@ finish_one() {
 
   default="$(default_branch "$main")"
   branch="$(git -C "$wt" branch --show-current)"
-  local merged="" pushed=""
-  git -C "$wt" merge-base --is-ancestor HEAD "origin/$default" && merged=1
+  local merged="" pushed="" target="${into:-origin/$default}"
+  git -C "$wt" merge-base --is-ancestor HEAD "$target" && merged=1
   git -C "$wt" rev-parse -q --verify '@{upstream}' >/dev/null 2>&1 &&
     git -C "$wt" merge-base --is-ancestor HEAD '@{upstream}' && pushed=1
   if [ -z "$merged" ] && [ -z "$pushed" ] && [ -z "$pr_open" ]; then
-    say "not merged into origin/$default and not pushed. Finish it with --pr-open only if an open PR covers $branch."
+    say "not merged into $target and not pushed. Finish it with --pr-open only if an open PR covers $branch."
     return 5
   fi
 
@@ -233,7 +233,7 @@ finish_one() {
   git -C "$main" worktree remove "$wt" || { say "git worktree remove failed."; return 1; }
   if [ -n "$branch" ]; then
     # git branch -d checks the upstream when one is set, so point it at the branch it was merged into.
-    [ -n "$merged" ] && git -C "$main" branch -q --set-upstream-to="origin/$default" "$branch" >/dev/null 2>&1
+    [ -n "$merged" ] && git -C "$main" branch -q --set-upstream-to="$target" "$branch" >/dev/null 2>&1
     if git -C "$main" branch -q -d "$branch" 2>/dev/null; then
       say "Removed $wt and deleted $branch."
     else
@@ -245,10 +245,15 @@ finish_one() {
 
 cmd_finish() {
   [ $# -ge 1 ] || usage
-  local wt pr_open=""
+  local wt pr_open="" into=""
   wt="$(cd "$1" 2>/dev/null && pwd -P)" || die "$1 does not exist."
-  [ "${2:-}" = --pr-open ] && pr_open=1
-  finish_one "$wt" "$pr_open"
+  case "${2:-}" in
+    --pr-open) pr_open=1 ;;
+    --merged-into) [ $# -eq 3 ] || usage; into="$3" ;;
+    "") ;;
+    *) usage ;;
+  esac
+  finish_one "$wt" "$pr_open" "$into"
 }
 
 cmd_sweep() {
