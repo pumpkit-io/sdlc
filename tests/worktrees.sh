@@ -6,51 +6,9 @@ set -u
 script="$(cd "$(dirname "$0")/.." && pwd)/skills/worktrees/scripts/worktree.sh"
 scratch="$(mktemp -d "${TMPDIR:-/tmp}/worktrees-test.XXXXXX")"
 trap 'rm -rf "$scratch"' EXIT
-failures=0
-
-export GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@example.com
-export GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=test@example.com
-export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
-
-check() {
-  local name="$1" expected="$2" actual="$3"
-  if [ "$expected" = "$actual" ]; then
-    printf 'ok   %s\n' "$name"
-  else
-    printf 'FAIL %s\n  expected: %s\n  actual:   %s\n' "$name" "$expected" "$actual"
-    failures=$((failures + 1))
-  fi
-}
-
-contains() {
-  local name="$1" needle="$2" haystack="$3"
-  case "$haystack" in
-    *"$needle"*) printf 'ok   %s\n' "$name" ;;
-    *) printf 'FAIL %s\n  expected to contain: %s\n  actual: %s\n' "$name" "$needle" "$haystack"
-       failures=$((failures + 1)) ;;
-  esac
-}
+. "$(dirname "$0")/lib.sh"
 
 wt() { bash "$script" "$@"; }
-
-# A bare origin with one commit on main, cloned as the Main checkout.
-new_repo() {
-  local name="$1"
-  git init -q --bare -b main "$scratch/$name-origin.git"
-  git clone -q "$scratch/$name-origin.git" "$scratch/$name" 2>/dev/null
-  git -C "$scratch/$name" commit -q --allow-empty -m init
-  git -C "$scratch/$name" push -q origin main
-  git -C "$scratch/$name" remote set-head origin main
-  printf '%s' "$scratch/$name"
-}
-
-# Backdates the lock, every file and the last commit so the lock reads as stale.
-age_worktree() {
-  local dir="$1"
-  printf '%s\nold session\n' "$(( $(date +%s) - 3 * 3600 ))" > "$dir/.sdlc/lock"
-  find "$dir" -path "$dir/.git" -prune -o -exec touch -t 202001010000 {} +
-  GIT_COMMITTER_DATE="2020-01-01T00:00:00" git -C "$dir" commit -q --allow-empty --amend --no-edit
-}
 
 echo "# slug"
 check "Portless example" "login-flow-v2" "$(wt slug feat/Login_Flow.v2)"
@@ -203,5 +161,4 @@ contains "busy left with reason" "busy: locked by session E" "$out"
 contains "open left with reason" "open: not merged" "$out"
 check "dirty kept" "yes" "$([ -d "$dirty" ] && echo yes)"
 
-echo
-if [ "$failures" -eq 0 ]; then echo "all passed"; else echo "$failures failed"; exit 1; fi
+finish_tests

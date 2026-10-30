@@ -6,34 +6,9 @@ set -u
 script="$(cd "$(dirname "$0")/.." && pwd)/skills/domain-modeling/scripts/next-adr.sh"
 scratch="$(mktemp -d "${TMPDIR:-/tmp}/next-adr-test.XXXXXX")"
 trap 'rm -rf "$scratch"' EXIT
-failures=0
-
-export GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@example.com
-export GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=test@example.com
-export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
-
-check() {
-  local name="$1" expected="$2" actual="$3"
-  if [ "$expected" = "$actual" ]; then
-    printf 'ok   %s\n' "$name"
-  else
-    printf 'FAIL %s\n  expected: %s\n  actual:   %s\n' "$name" "$expected" "$actual"
-    failures=$((failures + 1))
-  fi
-}
+. "$(dirname "$0")/lib.sh"
 
 next() { bash "$script" "$@" 2>/dev/null; }
-
-# A bare origin with one commit on main, cloned as the Main checkout.
-new_repo() {
-  local name="$1"
-  git init -q --bare -b main "$scratch/$name-origin.git"
-  git clone -q "$scratch/$name-origin.git" "$scratch/$name" 2>/dev/null
-  git -C "$scratch/$name" commit -q --allow-empty -m init
-  git -C "$scratch/$name" push -q origin main
-  git -C "$scratch/$name" remote set-head origin main
-  printf '%s' "$scratch/$name"
-}
 
 add_adr() {
   local repo="$1" file="$2"
@@ -92,5 +67,4 @@ add_adr "$repo" docs/adr/0002-x.md
 check "a context folder numbers on its own" "0001" "$(cd "$repo" && next src/billing/docs/adr)"
 check "the root folder keeps its own count" "0003" "$(cd "$repo" && next docs/adr)"
 
-echo
-if [ "$failures" -eq 0 ]; then echo "all passed"; else echo "$failures failed"; exit 1; fi
+finish_tests
