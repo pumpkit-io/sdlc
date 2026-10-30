@@ -2,7 +2,7 @@
 
 Agent skills for SDLC (Software Development LifeCycle): idea, spec, tickets, code, review, PR, with a glossary and ADRs kept current along the way. They work in any project repo.
 
-The skills are plain [Agent Skills](https://agentskills.io), so they work in any coding agent that supports the standard. Claude Code gets them as a plugin, together with two hooks: a git guardrail and a comment slop check. Codex, Cursor, Gemini CLI, Copilot, OpenCode and other agents install the same skills with `npx skills`.
+The skills are plain [Agent Skills](https://agentskills.io), so they work in any coding agent that supports the standard. Claude Code gets them as a plugin, together with three hooks: a git guardrail, a comment slop check and a main-checkout guard. Codex, Cursor, Gemini CLI, Copilot, OpenCode and other agents install the same skills with `npx skills`.
 
 ## Install
 
@@ -19,7 +19,7 @@ claude plugin install sdlc@pumpkit-io --scope user
 
 Then run `/reload-plugins` or restart. Third-party marketplaces don't auto-update by default: enable it in `/plugin`, Marketplaces tab, or run `claude plugin update sdlc@pumpkit-io`.
 
-Prefer editable files? Use the `npx` install below instead of the plugin (`-a claude-code`); you lose both hooks.
+Prefer editable files? Use the `npx` install below instead of the plugin (`-a claude-code`); you lose the hooks.
 
 ### Codex, Cursor, Gemini CLI, Copilot, OpenCode and other agents
 
@@ -59,7 +59,8 @@ As of 2026-10. Agents change fast; open an issue if a row is out of date.
 | Command skills run only when you invoke them | yes | yes (via `agents/openai.yaml`) | yes | yes (VS Code) | no, the model may load them | no, the model may load them |
 | Reference skills hidden from menus | yes | no | no | yes (VS Code) | no | no |
 | Parallel sub-agents (review-changes, implement-spec, deslop, refresh-spec) | yes | not verified | not verified | not verified | not verified | not verified |
-| Git guardrail hook | yes | no | no | no | no | no |
+| Git and Portless guardrail hook | yes | no | no | no | no | no |
+| Main checkout write guard | yes | no | no | no | no | no |
 | Comment slop check at commit | yes | no | no | no | no | no |
 | Instruction file it reads | `CLAUDE.md`, which imports `AGENTS.md` | `AGENTS.md` | `AGENTS.md` | not verified | `GEMINI.md` (point it at `AGENTS.md`) | `AGENTS.md` |
 
@@ -70,10 +71,10 @@ Without sub-agents, `review-changes` runs its three reviews one after another, `
 | Type | Triggered by | Skills |
 |---|---|---|
 | Command | You, by typing it | setup-sdlc, update-design, deslop, grill-with-docs, to-spec, to-tickets, refresh-spec, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
-| Automatic | The agent when relevant, or you | tdd, code-comments, diagnosing-bugs, dev-stack, review-changes, pr, prose-style, ui-design, prototype, domain-modeling, setup-pre-commit |
+| Automatic | The agent when relevant, or you | tdd, code-comments, diagnosing-bugs, dev-stack, review-changes, pr, prose-style, ui-design, prototype, domain-modeling, setup-pre-commit, worktrees |
 | Reference | Other skills only | grilling, codebase-design, writing-for-agents |
 
-Plus two hooks in Claude Code: git guardrails and the comment slop check (below).
+Plus three hooks in Claude Code: git guardrails, the main-checkout guard and the comment slop check (below).
 
 ## Flows
 
@@ -133,11 +134,21 @@ Gemini CLI reads `GEMINI.md`: import `AGENTS.md` from it, or set `context.fileNa
 
 ## Git guardrails
 
-The guardrail runs in Claude Code only, as an always-on `PreToolUse` hook shipped with the plugin (`hooks/block-dangerous-git.sh`, needs `jq` and `perl`). It blocks force, mirror and delete pushes, `reset --hard`, `clean -f`, `branch -D`, `checkout .` / `restore .`, skipping git hooks (`--no-verify`, `-c core.hooksPath`), `gh pr merge`, `gh repo delete`, visibility changes, and `gh api` calls that merge a PR, change rulesets or branch protection, or delete a repository. Pushes are otherwise allowed, to any branch: whether `main` takes direct pushes is up to each repo's branch protection. Merging stays with the human. Change `PUSH_POLICY` in the script to `none` to block all pushes.
+The guardrail runs in Claude Code only, as an always-on `PreToolUse` hook shipped with the plugin (`hooks/block-dangerous-git.sh`, needs `jq` and `perl`). It blocks force, mirror and delete pushes, `reset --hard`, `clean -f`, `branch -D`, `checkout .` / `restore .`, `worktree remove -f` / `--force`, skipping git hooks (`--no-verify`, `-c core.hooksPath`), `gh pr merge`, `gh repo delete`, visibility changes, and `gh api` calls that merge a PR, change rulesets or branch protection, or delete a repository.
 
-The hook checks the arguments of each `git` and `gh` command in the line, so a commit message, PR body or heredoc that mentions `reset --hard` doesn't trip it, and neither does `gh pr create --base main` chained after a push. It also checks commands run through `sh -c`, `eval` and a heredoc fed to a shell.
+It also blocks the Portless commands that break the shared proxy or another worktree's route: `portless proxy stop`, `portless clean`, `portless hosts clean`, `portless service uninstall` and `portless run --force`. It allows `portless prune` and `portless alias … --force`, which a dev stack contract uses on its own route ([ADR 0005](./docs/adr/0005-dev-stacks-only-through-the-repo-contract.md)). Pushes are otherwise allowed, to any branch: whether `main` takes direct pushes is up to each repo's branch protection. Merging stays with the human. Change `PUSH_POLICY` in the script to `none` to block all pushes.
+
+The hook checks the arguments of each `git`, `gh` and `portless` command in the line, so a commit message, PR body or heredoc that mentions `reset --hard` doesn't trip it, and neither does `gh pr create --base main` chained after a push. It also checks commands run through `sh -c`, `eval` and a heredoc fed to a shell.
 
 In other agents, rely on the agent's own approval or sandbox mode for the same protection. [ADR 0002](./docs/adr/0002-agent-neutral-skills-single-native-package.md) explains why the hook isn't ported yet.
+
+## Main-checkout guard
+
+A third `PreToolUse` hook (`hooks/guard-main-checkout.sh`, needs `jq` and `perl`) keeps agents out of your **Main checkout** in Claude Code ([ADR 0004](./docs/adr/0004-one-worktree-per-unit-of-work-chosen-by-the-skills.md)). It acts only in a repo whose `AGENTS.md` (or, for older setups, `CLAUDE.md`) has the `### Worktrees` rule, and finds the main checkout through git's common dir, so it works the same from any worktree.
+
+It blocks `Edit`, `Write`, `MultiEdit` and `NotebookEdit` on files in the main checkout. It allows edits in the worktrees folder (`.claude/worktrees/`, or the Folder set in `docs/agents/worktrees.md`), in `.sdlc/`, in `docs/architecture-improvements/`, and anywhere outside the repo, such as memory and temp files. In Bash it blocks `git commit`, `add`, `checkout`, `switch`, `merge` and `pull` (except with `--ff-only`), `rebase`, `stash` (except `list` and `show`), `cherry-pick`, `revert`, `apply` and `am` when they run in the main checkout, including through `cd` or `git -C`; the same commands in a worktree pass. The block message tells the agent to load the `worktrees` skill, resolve a worktree and retry there.
+
+Start a session with `SDLC_ALLOW_MAIN_CHECKOUT=1` set to let an agent write in your checkout on purpose. Shell redirections into the checkout are not caught; the `AGENTS.md` rule covers them. In other agents the rule and the `worktrees` skill are the only layers.
 
 ## Comment slop check
 

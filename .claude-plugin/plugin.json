@@ -26,6 +26,7 @@
     "./skills/refresh-spec",
     "./skills/implement",
     "./skills/implement-spec",
+    "./skills/worktrees",
     "./skills/tdd",
     "./skills/code-comments",
     "./skills/codebase-design",
