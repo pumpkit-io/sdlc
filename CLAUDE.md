@@ -28,6 +28,8 @@ Run `claude plugin validate .` after touching either manifest. Two warnings are 
 
 `hooks/check-commit-slop.sh` blocks a `git commit` whose added comments fail `hooks/comment-slop.pl`. When you change either, test the hook the same way with a `cwd` pointing at a scratch repo with staged changes, and pipe a known-clean history through the script (`git diff -U0 <first commit> HEAD | perl hooks/comment-slop.pl` on a repo the skills already cleaned): every finding there is a false positive to fix.
 
+`skills/worktrees/scripts/worktree.sh` does the worktrees skill's git work. After changing it, run `tests/worktrees.sh`, which drives it against scratch repos under `$TMPDIR` and exits non-zero on any failing case.
+
 Skills that cannot work without per-repo config point to `/setup-sdlc`; the others degrade silently. See `docs/adr/0001-explicit-setup-pointer-only-for-hard-dependencies.md`.
 
 All of this repo's prose follows the `prose-style` skill: `SKILL.md` files, docs, `README.md`, ADRs and code comments.
