@@ -24,13 +24,9 @@ Only include these when they add genuine value. Most ADRs won't need them.
 
 ## Numbering
 
-Parallel sessions write ADRs on different branches, so the next number is the highest one found on `origin/<default>`, on every local branch and in every worktree's uncommitted files, plus one. Run `git fetch origin`, then this prints the highest (swap `docs/adr` for the context's ADR folder in a multi-context repo):
+Every ADR takes its number from `scripts/next-adr.sh` in this skill's folder, the first ADR in an empty folder included. Run it with `bash` from the worktree the ADR goes in, passing the context's ADR folder in a multi-context repo (`bash <skill folder>/scripts/next-adr.sh src/billing/docs/adr`; the default is `docs/adr`). It prints the number to use, four digits.
 
-```sh
-{ git for-each-ref --format='%(refname)' refs/heads "$(git symbolic-ref refs/remotes/origin/HEAD)" | xargs -I{} git ls-tree --name-only {} docs/adr/; git worktree list --porcelain | sed -n 's/^worktree //p' | xargs -I{} ls {}/docs/adr 2>/dev/null; } | sed 's|.*/||' | grep -o '^[0-9]\{4\}' | sort -u | tail -1
-```
-
-No output means no ADR exists yet: start at `0001`. Write the ADR file as soon as you pick its number, so a parallel session's scan sees it.
+Parallel sessions write ADRs on different branches, and several may pick a number in the same minute. The script takes the highest number on `origin/<default>`, on every local branch, in every worktree's uncommitted files and among numbers already claimed on this machine, then claims the next one, so no two sessions get the same number even before either writes its file.
 
 A branch on another machine can still take the same number. That collision is resolved at merge: the branch merged second renames its ADR to the next free number and updates every reference to it.
 
