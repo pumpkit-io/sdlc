@@ -1,0 +1,5 @@
+interface:
+  display_name: "Check sdlc"
+  short_description: "Check the setup and fix what you approve"
+policy:
+  allow_implicit_invocation: false

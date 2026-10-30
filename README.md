@@ -37,6 +37,8 @@ Run `setup-sdlc` (see [Invoking skills](#invoking-skills) for your agent's synta
 
 Already set up a repo with an older version that wrote to `CLAUDE.md`? Re-run `setup-sdlc` once: it moves the block to `AGENTS.md`, where other agents can see it.
 
+After updating the plugin, on a new machine, or when something behaves oddly, run `check-sdlc`. It checks the setup on this machine and in this repo, fixes what you approve and checks again.
+
 ## Invoking skills
 
 | Agent | Syntax | Example |
@@ -70,7 +72,7 @@ Without sub-agents, `review-changes` runs its three reviews one after another, `
 
 | Type | Triggered by | Skills |
 |---|---|---|
-| Command | You, by typing it | setup-sdlc, update-design, deslop, grill-with-docs, to-spec, to-tickets, refresh-spec, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
+| Command | You, by typing it | setup-sdlc, check-sdlc, update-design, deslop, grill-with-docs, to-spec, to-tickets, refresh-spec, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
 | Automatic | The agent when relevant, or you | tdd, code-comments, diagnosing-bugs, dev-stack, review-changes, pr, prose-style, ui-design, prototype, domain-modeling, setup-pre-commit, worktrees |
 | Reference | Other skills only | grilling, codebase-design, writing-for-agents |
 
