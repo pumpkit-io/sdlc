@@ -23,7 +23,7 @@ Every comment or issue posted to the issue tracker during triage **must** start 
 
 ## Worktree
 
-Triage writes repo files in two places: grilling (`GLOSSARY.md`, ADRs) and a rejected enhancement's `.out-of-scope/` entry. Before the first of those writes, load the `worktrees` skill and resolve the worktree for this work before writing anything. Commit the files there, then release the lock through the `worktrees` skill when the triage of that issue or PR is done. Reading the tracker, labelling and commenting need no worktree.
+Triage writes repo files in two places: grilling (`GLOSSARY.md`, ADRs) and a rejected enhancement's `.out-of-scope/` entry. Reading the tracker, labelling and commenting need no worktree. Load the `worktrees` skill and resolve the worktree for this work before writing anything. Commit the files there, and when the triage of that issue or PR is done, release this session's worktree lock, as the `worktrees` skill's Release section says.
 
 ## Roles
 

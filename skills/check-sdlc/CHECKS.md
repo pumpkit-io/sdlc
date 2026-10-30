@@ -24,7 +24,7 @@ Each row gives the fix and its kind:
 | `agent.jq` | `jq` for the hooks | script | `jq` is on `PATH` | `brew install jq` on macOS; `sudo apt-get install jq` on Debian and Ubuntu | approval (user-only when it needs `sudo`) | none |
 | `agent.perl` | `perl` for the hooks | script | `perl` is on `PATH` | `brew install perl`; `sudo apt-get install perl` | approval (user-only when it needs `sudo`) | none |
 | `agent.skills-once` | Each sdlc skill is installed once | judgment | Your list of available skills names each sdlc skill once; in Claude Code, not both as `sdlc:<name>` and `<name>` | Remove one install, as the README's Install section says: `claude plugin uninstall sdlc@pumpkit-io`, or delete the `npx` copy from `.claude/skills/` or `.agents/skills/` | user-only | none |
-| `agent.hooks` | The guardrail, guard and slop hooks run | judgment | Claude Code only: `claude plugin list` shows `sdlc` enabled. Skip in other agents, which have no hooks. | `claude plugin enable sdlc@pumpkit-io`, then `/reload-plugins` | user-only | none |
+| `agent.hooks` | The guardrail, guard and slop hooks run | judgment | Claude Code only: `claude plugin list` shows `sdlc` enabled. Skip in other agents, which have no hooks. | In Claude Code: `claude plugin enable sdlc@pumpkit-io`, then `/reload-plugins` | user-only | none |
 
 ## Repo instructions
 
@@ -77,7 +77,7 @@ All three skip when `origin` is not on GitHub.
 | `worktrees.bootstrap` | The files to copy exist | script | Every path under the doc's Copy exists in the main checkout | Remove the stale bullet from Copy; or the user creates the file in the main checkout | approval | F |
 | `worktrees.missing-dirs` | No worktree registered without its folder | script | `git worktree list --porcelain` shows nothing `prunable` | `git -C <main> worktree prune` | automatic | none |
 | `worktrees.merged` | No leftover merged worktrees | script | No unlocked worktree has zero commits ahead of `origin/<default>`, as of the last fetch | `bash <wt> sweep`, which fetches first and leaves anything dirty, locked or unmerged | approval | none |
-| `worktrees.stale-locks` | No abandoned locks | script | No lock is stale (two hours with no file change and no commit) | `bash <wt> release <path>` for each lock the user confirms no session holds | approval | none |
+| `worktrees.stale-locks` | No abandoned locks | script | No lock is stale (taken over two hours ago, with no file change and no commit for two hours) | `bash <wt> release <path>` for each lock the user confirms no session holds | approval | none |
 | `worktrees.main-clean` | The main checkout holds no agent changes | script | `git -C <main> status --porcelain` is empty outside the worktrees folder and `.sdlc/` | Review with `git -C <main> status`, then commit, move or discard the changes yourself | user-only | none |
 
 ## Portless and the proxy
@@ -114,5 +114,5 @@ Both skip without `docs/agents/dev-stack.md`.
 
 | id | What | How | Pass when | Fix | Kind | Section |
 |---|---|---|---|---|---|---|
-| `stacks.cap` | Running stacks stay under the cap | script | This repo's running stacks (from `bash <wt> list` and the main checkout's `status`) are at most the doc's cap | `(cd <worktree> && scripts/dev-stack down)` for the stacks the user picks | user-only | none |
+| `stacks.cap` | Running stacks stay under the cap | script | The stacks running on this machine, from every repo, are at most the doc's cap. Each route in Portless's `routes.json` is one stack; routes sharing a first and last label (a stack's extra services) count once | `(cd <worktree> && scripts/dev-stack down)` for the stacks the user picks | user-only | none |
 | `stacks.merged` | No stack left in a merged worktree | script | No worktree with zero commits ahead of `origin/<default>` has a running stack | `bash <wt> finish <path>`, which destroys the stack first | approval | none |

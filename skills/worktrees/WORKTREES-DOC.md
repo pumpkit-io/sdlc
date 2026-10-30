@@ -22,5 +22,5 @@ npm ci
 ~~~
 
 - **Copy** lists gitignored files or folders, one per bullet in backticks, as paths from the repo root. Each is copied from the main checkout when it exists there and the worktree lacks it.
-- **Install** holds one fenced block, run with `sh` in the new worktree. A failure stops `create` with the worktree left in place.
+- **Install** holds one fenced block, run with `sh` in the new worktree. A failure stops `create` with the worktree left in place; the next `create` for the branch runs the install again.
 - **Folder** moves worktrees out of `.claude/worktrees`, as a path from the repo root. Leave it out unless the repo needs it: agents that switch sessions between worktrees may only do it under `.claude/worktrees/`.

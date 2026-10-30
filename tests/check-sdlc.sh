@@ -7,49 +7,15 @@ script="$(cd "$(dirname "$0")/.." && pwd)/skills/check-sdlc/scripts/check.sh"
 worktree="$(cd "$(dirname "$0")/.." && pwd)/skills/worktrees/scripts/worktree.sh"
 scratch="$(mktemp -d "${TMPDIR:-/tmp}/check-sdlc-test.XXXXXX")"
 trap 'rm -rf "$scratch"' EXIT
-failures=0
-
-export GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@example.com
-export GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=test@example.com
-export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+. "$(dirname "$0")/lib.sh"
 export PORTLESS_STATE_DIR="$scratch/portless-state"
 no_portless_path="/usr/bin:/bin:/usr/sbin:/sbin"
 mkdir -p "$scratch/bin" "$PORTLESS_STATE_DIR"
 
-check() {
-  local name="$1" expected="$2" actual="$3"
-  if [ "$expected" = "$actual" ]; then
-    printf 'ok   %s\n' "$name"
-  else
-    printf 'FAIL %s\n  expected: %s\n  actual:   %s\n' "$name" "$expected" "$actual"
-    failures=$((failures + 1))
-  fi
-}
-
-contains() {
-  local name="$1" needle="$2" haystack="$3"
-  case "$haystack" in
-    *"$needle"*) printf 'ok   %s\n' "$name" ;;
-    *) printf 'FAIL %s\n  expected to contain: %s\n  actual: %s\n' "$name" "$needle" "$haystack"
-       failures=$((failures + 1)) ;;
-  esac
-}
-
-# run <dir> [PATH]: the script's output from inside <dir>.
+# Portless stays off PATH unless the second argument puts it back.
 run() { (cd "$1" && PATH="${2:-$no_portless_path}" bash "$script"); }
 status() { printf '%s\n' "$2" | jq -r --arg id "$1" 'select(.id == $id) | .status'; }
 detail() { printf '%s\n' "$2" | jq -r --arg id "$1" 'select(.id == $id) | .detail'; }
-
-# A bare origin with one commit on main, cloned as the Main checkout.
-new_repo() {
-  local name="$1"
-  git init -q --bare -b main "$scratch/$name-origin.git"
-  git clone -q "$scratch/$name-origin.git" "$scratch/$name" 2>/dev/null
-  git -C "$scratch/$name" commit -q --allow-empty -m init
-  git -C "$scratch/$name" push -q origin main
-  git -C "$scratch/$name" remote set-head origin main
-  printf '%s' "$scratch/$name"
-}
 
 # A repo with everything setup-sdlc writes for a repo with no app, on a local tracker.
 set_up_repo() {
@@ -82,15 +48,6 @@ EOF
   printf '.claude/worktrees/\n.sdlc/\n' > "$repo/.gitignore"
   git -C "$repo" add -A && git -C "$repo" commit -q -m setup && git -C "$repo" push -q origin main
   printf '%s' "$repo"
-}
-
-# Backdates the lock, every file and the last commit so the lock reads as stale.
-age_worktree() {
-  local dir="$1"
-  mkdir -p "$dir/.sdlc"
-  printf '%s\nold session\n' "$(( $(date +%s) - 3 * 3600 ))" > "$dir/.sdlc/lock"
-  find "$dir" -path "$dir/.git" -prune -o -exec touch -t 202001010000 {} +
-  GIT_COMMITTER_DATE="2020-01-01T00:00:00" git -C "$dir" commit -q --allow-empty --amend --no-edit
 }
 
 echo "# no setup"
@@ -240,6 +197,12 @@ check "devstack.url passes" "pass" "$(status devstack.url "$out")"
 check "devstack.status passes" "pass" "$(status devstack.status "$out")"
 check "stacks.cap passes" "pass" "$(status stacks.cap "$out")"
 check "only read-only Portless calls" "--version doctor" "$(sort -u "$scratch/portless-calls" | tr '\n' ' ' | sed 's/ $//')"
+cp "$PORTLESS_STATE_DIR/routes.json" "$scratch/routes.json"
+printf '[{"hostname":"live.app.localhost","port":4001,"pid":0},{"hostname":"live.api.app.localhost","port":4005,"pid":0},{"hostname":"app.localhost","port":4003,"pid":0},{"hostname":"a.other.localhost","port":4004,"pid":0},{"hostname":"b.other.localhost","port":4006,"pid":0},{"hostname":"third.localhost","port":4007,"pid":0}]' > "$PORTLESS_STATE_DIR/routes.json"
+out="$(run "$stack" "$scratch/bin:$no_portless_path")"
+check "stacks.cap counts every repo's stacks on the machine" "5 stacks running on this machine; the cap is 4: live.app app a.other b.other third" "$(detail stacks.cap "$out")"
+check "and warns" "warn" "$(status stacks.cap "$out")"
+mv "$scratch/routes.json" "$PORTLESS_STATE_DIR/routes.json"
 
 echo "# dev stack doc only, HTTPS mode, no contract yet"
 pending="$(set_up_repo pending)"
@@ -258,5 +221,4 @@ out="$(run "$stack" "$scratch/bin:$no_portless_path")"
 check "devstack.script warns" "warn" "$(status devstack.script "$out")"
 contains "names the mismatch" "PROXY_PORT=443" "$(detail devstack.script "$out")"
 
-echo
-if [ "$failures" -eq 0 ]; then echo "all passed"; else echo "$failures failed"; exit 1; fi
+finish_tests

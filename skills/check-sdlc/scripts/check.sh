@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
-# The mechanical half of check-sdlc. See ../CHECKS.md for what each id means and how to fix it.
-#
-#   check.sh [<checkout>]
-#
-# Reads repo files from <checkout> (default: the current top level) and worktrees, locks and the
-# main checkout's state from the Main checkout. Prints one JSON line per check: id, status
-# (pass, warn, fail, skip) and detail. Changes nothing: no fetch, no Portless command that writes.
+# check.sh [<checkout>]: one JSON line (id, status, detail) per check in ../CHECKS.md. It fetches and writes nothing.
+# Repo files come from <checkout> (default: this top level); worktrees and locks come from the Main checkout.
 set -u
 
 here="$(cd "$(dirname "$0")" && pwd -P)"
@@ -37,7 +32,8 @@ if has_line "$top/AGENTS.md" "## Agent skills"; then
 elif has_line "$top/CLAUDE.md" "## Agent skills"; then
   block_file="$top/CLAUDE.md"
 fi
-block() { [ -n "$block_file" ] && awk '$0 == "## Agent skills" { on = 1; next } /^## / { on = 0 } on' "$block_file"; }
+doc_section() { [ -f "$1" ] && awk -v h="## $2" '$0 == h { on = 1; next } /^## / { on = 0 } on' "$1"; }
+block() { [ -n "$block_file" ] && doc_section "$block_file" "Agent skills"; }
 block_has() { block | grep -qxF "### $1"; }
 
 if [ -z "$block_file" ] && [ ! -f "$top/docs/agents/issue-tracker.md" ] && [ ! -f "$top/docs/agents/domain.md" ]; then
@@ -90,13 +86,15 @@ else
   fi
 fi
 
-for pair in "code-comments:Code comments" "worktrees-rule:Worktrees"; do
-  if block_has "${pair#*:}"; then
-    emit "instructions.${pair%%:*}" pass "### ${pair#*:}"
+sub_block() {
+  if block_has "$2"; then
+    emit "instructions.$1" pass "### $2"
   else
-    emit "instructions.${pair%%:*}" fail "The block has no '### ${pair#*:}' sub-block."
+    emit "instructions.$1" fail "The block has no '### $2' sub-block."
   fi
-done
+}
+sub_block code-comments "Code comments"
+sub_block worktrees-rule Worktrees
 
 dev_doc="$top/docs/agents/dev-stack.md"
 if [ ! -f "$dev_doc" ]; then
@@ -193,7 +191,6 @@ fi
 # Worktrees
 
 wt_doc="$top/docs/agents/worktrees.md"
-doc_section() { [ -f "$1" ] && awk -v h="## $2" '$0 == h { on = 1; next } /^## / { on = 0 } on' "$1"; }
 folder="$(doc_section "$wt_doc" Folder | sed -n 's/^`\(.*\)`$/\1/p' | head -n 1)"
 folder="${folder:-.claude/worktrees}"
 
@@ -407,12 +404,18 @@ if [ ! -f "$dev_doc" ]; then
   emit stacks.cap skip "No dev stack doc."
   emit stacks.merged skip "No dev stack doc."
 else
-  running="$(printf '%s\n' "$listing" | awk -F '\t' '$7 == "running"' | wc -l | tr -d ' ')"
-  [ "$stack_main" = running ] && running=$((running + 1))
-  if [ "$running" -gt "$cap" ]; then
-    emit stacks.cap warn "$running stacks of this repo running; the cap is $cap."
+  # Per machine, so every repo's routes count; routes sharing a first and last label are one stack's services.
+  if ! command -v jq >/dev/null 2>&1; then
+    emit stacks.cap skip "jq is not on PATH."
   else
-    emit stacks.cap pass "$running of $cap stacks of this repo running."
+    stacks="$(jq -r '.[].hostname' "$state_dir/routes.json" 2>/dev/null | sed 's/\.localhost$//' |
+      awk -F . '{ k = NF > 2 ? $1 "." $NF : $0 } !seen[k]++ { print k }')"
+    running="$(printf '%s' "$stacks" | grep -c .)"
+    if [ "$running" -gt "$cap" ]; then
+      emit stacks.cap warn "$running stacks running on this machine; the cap is $cap: $(printf '%s' "$stacks" | tr '\n' ' ')"
+    else
+      emit stacks.cap pass "$running of $cap stacks running on this machine."
+    fi
   fi
   merged_running="$(printf '%s\n' "$listing" | awk -F '\t' '$3 == "0" && $7 == "running" { printf " %s", $1 }')"
   if [ -z "$merged_running" ]; then

@@ -40,7 +40,7 @@ Done when the user has answered or said stop.
 Apply only the selected fixes.
 
 - **Machine fixes** (installs, `git worktree prune`, `worktree.sh` sweeps and releases, `portless alias --remove` on the listed routes, the proxy start in HTTP mode) run directly, from the main checkout.
-- **Repo-file fixes** land on one worktree. Load the `worktrees` skill and resolve a worktree for the branch `chore/sdlc-fixes`, then make one commit per fix there, with a message naming the check (`chore(sdlc): add the .sdlc/ gitignore entry`). Every round reuses the same worktree.
+- **Repo-file fixes** land on one worktree. Load the `worktrees` skill and resolve the worktree for this work before writing anything. Its branch is `chore/sdlc-fixes`. Make one commit per fix there, with a message naming the check (`chore(sdlc): add the .sdlc/ gitignore entry`). Every round reuses the same worktree.
 - **Issues** (`devstack.url`, `devstack.status`, `devstack.blockers`) go to the issue tracker through `docs/agents/issue-tracker.md`, one issue for all of them.
 
 When a fix fails, keep going with the others and report it in the next table.
@@ -55,7 +55,7 @@ The loop ends when everything passes, or when the user stops or declines every r
 
 When `chore/sdlc-fixes` holds commits, offer a pull request (load the `pr` skill for its body). Fast-forward the default branch instead only when the user says yes to that explicitly: with the main checkout on `<default>` and clean, run `git -C <main> merge --ff-only chore/sdlc-fixes`, then offer to push `<default>`. That fast-forward is the one write to the main checkout this skill makes.
 
-Release the worktree's lock. After a fast-forward, finish the worktree with `worktree.sh finish <path> --merged-into <default>`.
+Release this session's worktree lock, as the `worktrees` skill's Release section says. After a fast-forward, finish the worktree with `worktree.sh finish <path> --merged-into <default>`.
 
 ## Boundaries
 

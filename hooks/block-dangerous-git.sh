@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
-# sdlc git and Portless guardrails: PreToolUse hook for the Bash tool.
-# Exit 0 lets the command run. Exit 2 blocks it, and stderr is shown to the agent.
-# Rules check the arguments of each git, gh or portless command, so text in commit messages, PR bodies,
-# heredocs and other chained commands never trips them. Pushes to main are left to each repo's
-# branch protection. Adapted from the git-guardrails-claude-code skill in mattpocock/skills.
-# Requires jq and perl.
+# Rules read each git, gh or portless command's own arguments, so commit messages and heredocs never trip them.
+# Pushes to main are left to branch protection. Adapted from git-guardrails-claude-code in mattpocock/skills.
 
 PUSH_POLICY="allow"   # "allow": pushes allowed, except force and delete. "none": every push blocked.
 
@@ -13,7 +9,6 @@ input="$(cat)"
 cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)"
 [ -z "$cmd" ] && exit 0
 
-# block <what> [<why, and what to do instead>]
 block() {
   printf 'BLOCKED by sdlc guardrails (%s).' "$1" >&2
   [ -n "$2" ] && printf ' %s' "$2" >&2
@@ -94,20 +89,35 @@ check_git() {
   esac
 }
 
+# The subcommand is the first known one, not the first word, so an option's value can't hide it.
 check_portless() {
-  while [ $# -gt 0 ] && [ "${1#-}" != "$1" ]; do shift; done
   local shared="The proxy and its routes are shared by every worktree's dev stack on this machine. Stop only your own stack, through the repo's dev stack contract (down or destroy)."
-  case "$1 $2" in
-    'proxy stop') block 'portless proxy stop' "$shared" ;;
-    'clean '*) block 'portless clean' "$shared" ;;
-    'hosts clean') block 'portless hosts clean' "$shared" ;;
-    'service uninstall') block 'portless service uninstall' "$shared" ;;
-    'run '*)
-      local a
+  local sub="" a
+  while [ $# -gt 0 ]; do
+    a="$1"; shift
+    case "$a" in run|proxy|mcp|service|get|alias|list|doctor|trust|clean|prune|hosts) sub="$a"; break ;; esac
+  done
+  case "$sub" in
+    clean) block 'portless clean' "$shared" ;;
+    proxy|hosts|service)
+      for a in "$@"; do
+        case "$sub $a" in
+          'proxy stop'|'hosts clean'|'service uninstall') block "portless $sub $a" "$shared" ;;
+        esac
+      done ;;
+    run)
       for a in "$@"; do
         [ "$a" = "--force" ] && block 'portless run --force' "It takes over a route another worktree may own. Start your stack through the repo's dev stack contract, which names the route after this worktree."
       done ;;
   esac
+}
+
+# npx, pnpm dlx, yarn dlx, npm exec and the like: the package's arguments follow its name.
+check_launcher() {
+  while [ $# -gt 0 ]; do
+    case "$1" in portless|portless@*) shift; check_portless "$@"; return ;; esac
+    shift
+  done
 }
 
 # Blocks API calls that merge a PR, change branch protection or delete a repository.
@@ -174,7 +184,7 @@ while IFS= read -r seg; do
     git|*/git) check_git "${w[@]:1}" ;;
     gh|*/gh) check_gh "${w[@]:1}" ;;
     portless|*/portless) check_portless "${w[@]:1}" ;;
-    npx|bunx) case "${w[1]}" in portless|portless@*) check_portless "${w[@]:2}" ;; esac ;;
+    npx|bunx|pnpx|pnpm|yarn|npm|bun|*/npx|*/pnpm|*/yarn|*/npm|*/bun) check_launcher "${w[@]:1}" ;;
   esac
 done < <(segments)
 exit 0

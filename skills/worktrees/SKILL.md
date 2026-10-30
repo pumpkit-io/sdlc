@@ -15,14 +15,18 @@ To leave a worktree, switch the session back to the main checkout, keeping the w
 
 ## Resolve
 
-The entry point. Given a **Spec**, a **Ticket**, an idea or nothing, end with the session in one worktree holding its lock, in this order:
+The entry point. A writing skill opens with this sentence, and it means this section:
 
-1. **Already in a fitting worktree.** When the session is in a linked worktree (its top level differs from `worktree.sh main`) and its branch is the one the work's **Feature branch link** names, or this session already worked there on the same work, stay. This covers `claude -w` and a grilling session moving on to `to-spec` or `implement`. Go to step 4.
+> Load the `worktrees` skill and resolve the worktree for this work before writing anything.
+
+Given a **Spec**, a **Ticket**, an idea or nothing, end with the session in one worktree holding its lock, in this order:
+
+1. **Already in a fitting worktree.** When the session is in a linked worktree (its top level differs from `worktree.sh main`) and its branch is the one the work's **Feature branch link** names, or this session already worked there on the same work, stay. This covers a session the agent started in a worktree (in Claude Code, `claude -w`) and a grilling session moving on to `to-spec` or `implement`. Go to step 4.
 2. **A Spec or Ticket.** Read its Feature branch link: the line `Branch: <branch>` at the top of the body. A Ticket without one follows its parent Spec's link. With a link, run `worktree.sh create <branch>`: it reuses the branch's worktree, or adds one for a branch that exists locally or on `origin`. A Spec with no link (one written before links existed) gets a new `feat/<slug>` branch as in step 3, and then you write `Branch: <branch>` as the first line of the Spec's body through the issue tracker (`docs/agents/issue-tracker.md`). A Ticket with no Spec is an idea.
 3. **An idea, or nothing.** Pick the prefix from the work: `fix/` for a bug, `feat/` for new behaviour, `chore/` for everything else (docs, config, setup, dependencies, a one-line change asked in passing). Name it in two to four lowercase words joined by hyphens, and keep the name for the life of the branch even when the idea changes shape. Run `worktree.sh create <prefix>/<name>`: it fetches `origin` and branches off `origin/<default>`.
 4. **Take the lock.** Run `worktree.sh lock <path> "<description>"` before writing anything there. The description is one line naming the skill, the work and when the session started (`implement #42, started 2026-10-30 14:05`); reuse the exact string for every later lock call in this session, since the script treats a matching description as the same session.
    - Exit 3, busy: another session holds a fresh lock. Stop and tell the user who holds it. When the work is one Ticket of a Spec, add that `implement-spec` runs a Spec's Tickets in parallel.
-   - Exit 4, stale: the holder made no file change and no commit for two hours. Ask the user whether to take it over; on yes, run `worktree.sh lock --take-over <path> "<description>"`. In an unattended run, stop with the holder's name instead of asking.
+   - Exit 4, stale: the lock was taken over two hours ago, and the worktree has had no file change and no commit for two hours. Ask the user whether to take it over; on yes, run `worktree.sh lock --take-over <path> "<description>"`. In an unattended run, stop with the holder's name instead of asking.
 5. **Move the session** into the worktree (above).
 6. **Report** one line: `Worktree: <path> (<branch>)`.
 
@@ -34,7 +38,7 @@ The branch's last `/` segment, lowercased, every character outside `[a-z0-9-]` t
 
 ### Bootstrap
 
-`create` bootstraps every worktree it adds. It copies the gitignored files the repo's `docs/agents/worktrees.md` lists from the main checkout and runs its install command; [WORKTREES-DOC.md](WORKTREES-DOC.md) has the format. Without the doc it copies and installs nothing and says so in one line. When the new branch's `.gitignore` misses the worktrees folder or `.sdlc/`, it adds them in their own commit, `chore: ignore worktrees and session locks`.
+`create` bootstraps every worktree it adds. It copies the gitignored files the repo's `docs/agents/worktrees.md` lists from the main checkout and runs its install command; [WORKTREES-DOC.md](WORKTREES-DOC.md) has the format. Without the doc it copies and installs nothing and says so in one line. When the new branch's `.gitignore` misses the worktrees folder or `.sdlc/`, it adds them in their own commit, `chore: ignore worktrees and session locks`. When the install or that commit fails, `create` stops with the worktree in place, and the next `create` for the branch runs the bootstrap again.
 
 ## Create
 
@@ -42,7 +46,11 @@ Resolve without the "stay" step: `worktree.sh create <branch> [<base>]`, then lo
 
 ## Release
 
-The last step of every writing skill: `worktree.sh release <path>`. It deletes the lock and nothing else.
+A writing skill closes with this sentence, and it means this section:
+
+> Release this session's worktree lock, as the `worktrees` skill's Release section says.
+
+Run `worktree.sh release <path>`. It deletes the lock and nothing else.
 
 ## List
 

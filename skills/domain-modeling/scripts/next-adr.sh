@@ -22,7 +22,7 @@ highest="$(
   {
     refs="$(git for-each-ref --format='%(refname)' refs/heads)"
     origin_head="$(git symbolic-ref -q refs/remotes/origin/HEAD 2>/dev/null)" && refs="$refs $origin_head"
-    for ref in $refs; do git ls-tree --name-only "$ref" "$dir/" 2>/dev/null; done
+    for ref in $refs; do git ls-tree --full-tree --name-only "$ref" "$dir/" 2>/dev/null; done
     git worktree list --porcelain | sed -n 's/^worktree //p' | while IFS= read -r wt; do
       ls "$wt/$dir" 2>/dev/null
     done

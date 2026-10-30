@@ -45,4 +45,4 @@ Write the approved draft to `DESIGN.md` at the repo root, byte for byte. Leave t
 
 ### 6. Release
 
-Whether or not the user approved, release the lock through the `worktrees` skill.
+Whether or not the user approved, release this session's worktree lock, as the `worktrees` skill's Release section says.

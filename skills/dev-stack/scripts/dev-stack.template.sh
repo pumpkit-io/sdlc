@@ -29,7 +29,7 @@ cd "$ROOT"
 note() { printf 'dev-stack: %s\n' "$*" >&2; }
 die() { note "$*"; exit 1; }
 
-command -v portless >/dev/null || die "portless is not installed; run the Portless section of setup-sdlc"
+has_portless() { command -v portless >/dev/null; }
 
 # Any HTTP answer counts, so a proxy in either mode is found on its port.
 proxy_running() {
@@ -48,23 +48,42 @@ ensure_proxy() {
   portless proxy start -p "$PROXY_PORT" "$tls_flag" </dev/null >&2 || die "could not start the Portless proxy"
 }
 
+# Without Portless, down and destroy still find their names: the Slug rule of the worktrees skill, applied to the branch.
+local_host() {
+  local branch slug=""
+  if [ "$(git rev-parse --absolute-git-dir)" != "$(git rev-parse --path-format=absolute --git-common-dir)" ]; then
+    branch=$(git branch --show-current)
+    slug=$(printf '%s' "${branch##*/}" | tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9-]/-/g' -e 's/--*/-/g' -e 's/^-//' -e 's/-$//' | cut -c1-63)
+    slug="${slug%-}."
+  fi
+  printf '%s%s.localhost\n' "$slug" "$PROJECT"
+}
+
 # The hostname comes from Portless, so the Slug matches the one portless run derives.
 init_names() {
-  local got
-  got=$(portless get "$PROJECT" </dev/null) || die "portless get $PROJECT failed"
-  HOST=${got#*://}
-  HOST=${HOST%%[:/]*}
+  local got=""
+  if has_portless; then
+    got=$(portless get "$PROJECT" </dev/null) || die "portless get $PROJECT failed"
+    HOST=${got#*://}
+    HOST=${HOST%%[:/]*}
+  else
+    HOST=$(local_host)
+  fi
   ROUTE=${HOST%.localhost}
   if [ "$ROUTE" = "$PROJECT" ]; then
     SLUG=""
   else
     SLUG=${ROUTE%".$PROJECT"}
   fi
-  # The Main checkout has no prefix in its route; its other names use "main".
-  NAME_SLUG=${SLUG:-main}
-  COMPOSE_PROJECT="$PROJECT-$NAME_SLUG"
-  DB_NAME=$(printf '%s_%s' "$PROJECT" "$NAME_SLUG" | tr -c 'a-z0-9_' '_' | cut -c1-63)
-  if proxy_running; then
+  # The Main checkout's names carry no slug, so no branch, not even one ending in main, can share them.
+  if [ -n "$SLUG" ]; then
+    COMPOSE_PROJECT="$PROJECT-$SLUG"
+    DB_NAME=$(printf '%s_%s' "$PROJECT" "$SLUG" | tr -c 'a-z0-9_' '_' | cut -c1-63)
+  else
+    COMPOSE_PROJECT="$PROJECT"
+    DB_NAME=$(printf '%s' "$PROJECT" | tr -c 'a-z0-9_' '_' | cut -c1-63)
+  fi
+  if [ -n "$got" ] && proxy_running; then
     DEV_URL=$got
   else
     local scheme=http port_part=":$PROXY_PORT"
@@ -117,24 +136,34 @@ A_PG_IMAGE="postgres:16-alpine"
 a_pidfile() { printf '%s/%s.pid' "$STATE_DIR" "$1"; }
 a_logfile() { printf '%s/%s.log' "$STATE_DIR" "$1"; }
 
-a_service_alive() {
-  local f
+a_started_at() { ps -o lstart= -p "$1" 2>/dev/null || true; }
+
+# A pid file holds the pid and its start time, so a pid the system reused is never trusted or killed.
+a_service_pid() {
+  local f pid started
   f=$(a_pidfile "$1")
-  [ -f "$f" ] && kill -0 "$(cat "$f")" 2>/dev/null
+  [ -f "$f" ] || return 1
+  pid=$(sed -n 1p "$f")
+  started=$(sed -n 2p "$f")
+  [ -n "$pid" ] && [ -n "$started" ] && [ "$(a_started_at "$pid")" = "$started" ] || return 1
+  printf '%s\n' "$pid"
 }
+
+a_service_alive() { a_service_pid "$1" >/dev/null; }
 
 a_alive() { a_service_alive web; }
 
-# Usage: a_start_service <service> <portless name> <command...>
 a_start_service() {
-  local svc=$1 name=$2
+  local svc=$1 name=$2 pid
   shift 2
   a_service_alive "$svc" && return 0
   nohup portless run --name "$name" "$@" >"$(a_logfile "$svc")" 2>&1 </dev/null &
-  echo $! >"$(a_pidfile "$svc")"
+  pid=$!
+  printf '%s\n%s\n' "$pid" "$(a_started_at "$pid")" >"$(a_pidfile "$svc")"
 }
 
-a_postgres() {
+# Starts the shared container, or creates it on first use.
+a_pg_start() {
   local i
   # A parallel up may be creating the container; keep starting it until one attempt wins.
   for i in $(seq 30); do
@@ -150,6 +179,10 @@ a_postgres() {
     [ "$i" = 60 ] && die "$A_PG_CONTAINER did not accept connections"
     sleep 1
   done
+}
+
+a_postgres() {
+  a_pg_start
   if [ "$(docker exec "$A_PG_CONTAINER" psql -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME'")" != "1" ]; then
     docker exec "$A_PG_CONTAINER" createdb -U postgres "$DB_NAME"
   fi
@@ -172,32 +205,34 @@ a_up() {
   # and the web app reads its URL from: portless get "api.$PROJECT".
 }
 
-a_stop_pid() {
-  local f pid i
-  f=$1
-  pid=$(cat "$f")
-  kill "$pid" 2>/dev/null || true
-  for i in $(seq 20); do
-    kill -0 "$pid" 2>/dev/null || break
-    sleep 0.5
-  done
-  kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null
-  rm -f "$f"
+a_stop_service() {
+  local svc=$1 pid i
+  if pid=$(a_service_pid "$svc"); then
+    kill "$pid" 2>/dev/null || true
+    for i in $(seq 20); do
+      a_service_alive "$svc" || break
+      sleep 0.5
+    done
+    a_service_alive "$svc" && kill -9 "$pid" 2>/dev/null
+  fi
+  rm -f "$(a_pidfile "$svc")"
 }
 
 # Stopping portless run stops its server and removes its route.
 a_down() {
   local f
   for f in "$STATE_DIR"/*.pid; do
-    [ -f "$f" ] && a_stop_pid "$f"
+    [ -f "$f" ] && a_stop_service "$(basename "$f" .pid)"
   done
   return 0
 }
 
 # The shared container stays up for the other worktrees; only this worktree's database goes.
+# A stopped container still holds that database, so it is started to drop it before the seed marker goes.
 a_destroy() {
   a_down
-  if [ "$(docker inspect -f '{{.State.Running}}' "$A_PG_CONTAINER" 2>/dev/null)" = "true" ]; then
+  if docker inspect "$A_PG_CONTAINER" >/dev/null 2>&1 || docker volume inspect "$A_PG_CONTAINER-data" >/dev/null 2>&1; then
+    a_pg_start
     docker exec "$A_PG_CONTAINER" psql -U postgres -qc "DROP DATABASE IF EXISTS \"$DB_NAME\" WITH (FORCE)" >&2
   fi
 }
@@ -258,6 +293,7 @@ usage() { printf 'usage: scripts/dev-stack up|down|destroy|url|status|logs [serv
 
 case "${1:-}" in
   up)
+    has_portless || die "portless is not installed; run the Portless section of setup-sdlc"
     ensure_proxy
     init_names
     mkdir -p "$STATE_DIR"
