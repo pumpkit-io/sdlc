@@ -1,0 +1,3 @@
+interface:
+  display_name: "Worktrees"
+  short_description: "Choose, enter and clean up a worktree per unit of work"
