@@ -93,4 +93,4 @@ Side effects happen inline as decisions crystallize; load the `domain-modeling` 
 - **User rejects the candidate with a load-bearing reason?** Offer an ADR, framed as: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Only offer when the reason would actually be needed by a future explorer to avoid re-suggesting the same thing; skip ephemeral reasons ("not worth it right now") and self-evident ones.
 - **Want to explore alternative interfaces for the deepened module?** Load the `codebase-design` skill and use its design-it-twice pattern.
 
-When the grilling ends, commit what it wrote in the worktree and release the lock through the `worktrees` skill.
+When the grilling ends, commit what it wrote in the worktree, then release this session's worktree lock, as the `worktrees` skill's Release section says.

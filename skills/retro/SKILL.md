@@ -24,7 +24,7 @@ The user has asked for a **retrospective**. You are suggesting improvements to t
 
 4. Present these candidates to the user, in order of severity.
 
-5. Apply only the candidates the user picks. Load the `worktrees` skill and resolve the worktree for this work before writing anything. Make the changes there, commit them, and release the lock through the `worktrees` skill.
+5. Apply only the candidates the user picks. Load the `worktrees` skill and resolve the worktree for this work before writing anything. Make the changes there and commit them, then release this session's worktree lock, as the `worktrees` skill's Release section says.
 
 ## Reference
 

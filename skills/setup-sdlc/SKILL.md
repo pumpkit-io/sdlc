@@ -116,7 +116,7 @@ Let them edit before writing.
 
 ### 4. Write
 
-**Where the writes land.** Load the `worktrees` skill and resolve a worktree for the branch `chore/setup-sdlc` (Section D's extract may already have). Every file below is written in that worktree, never in the main checkout.
+**Where the writes land.** Load the `worktrees` skill and resolve the worktree for this work before writing anything. Its branch is `chore/setup-sdlc` (Section D's extract may already have resolved it). Every file below is written in that worktree, never in the main checkout.
 
 **Where the block goes:**
 
@@ -197,7 +197,7 @@ Offer a pull request for `chore/setup-sdlc` (load the `pr` skill for its body). 
 
 Say plainly: new worktrees branch from `origin/<default>`, so they don't have the `### Worktrees` rule, the worktrees doc or the dev stack doc until `chore/setup-sdlc` reaches the default branch there.
 
-Release the worktree's lock. After a fast-forward, finish the worktree with `worktree.sh finish <path> --merged-into <default>`.
+Release this session's worktree lock, as the `worktrees` skill's Release section says. After a fast-forward, finish the worktree with `worktree.sh finish <path> --merged-into <default>`.
 
 ### 7. Done
 
