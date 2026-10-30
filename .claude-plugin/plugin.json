@@ -37,6 +37,7 @@
     "./skills/deslop",
     "./skills/triage",
     "./skills/diagnosing-bugs",
+    "./skills/dev-stack",
     "./skills/improve-codebase-architecture",
     "./skills/retro",
     "./skills/prototype",

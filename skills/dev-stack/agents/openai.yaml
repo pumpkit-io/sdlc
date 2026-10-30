@@ -1,0 +1,3 @@
+interface:
+  display_name: "Dev Stack"
+  short_description: "Run the app for this worktree and report its Dev URL"

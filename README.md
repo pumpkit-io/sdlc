@@ -71,7 +71,7 @@ Without sub-agents, `review-changes` runs its three reviews one after another, `
 | Type | Triggered by | Skills |
 |---|---|---|
 | Command | You, by typing it | setup-sdlc, update-design, deslop, grill-with-docs, to-spec, to-tickets, refresh-spec, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
-| Automatic | The agent when relevant, or you | tdd, code-comments, diagnosing-bugs, review-changes, pr, prose-style, ui-design, prototype, domain-modeling, setup-pre-commit, worktrees |
+| Automatic | The agent when relevant, or you | tdd, code-comments, diagnosing-bugs, dev-stack, review-changes, pr, prose-style, ui-design, prototype, domain-modeling, setup-pre-commit, worktrees |
 | Reference | Other skills only | grilling, codebase-design, writing-for-agents |
 
 Plus three hooks in Claude Code: git guardrails, the main-checkout guard and the comment slop check (below).
