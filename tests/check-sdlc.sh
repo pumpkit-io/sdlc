@@ -148,15 +148,47 @@ out="$(run "$noignore")"
 check "worktrees.gitignore fails" "fail" "$(status worktrees.gitignore "$out")"
 check "names the entry" "Missing from .gitignore: .sdlc/" "$(detail worktrees.gitignore "$out")"
 
+echo "# worktrees folder not ignored yet in the main checkout"
+unignored="$(set_up_repo unignored)"
+git -C "$unignored" rm -q .gitignore && git -C "$unignored" commit -q -m "drop .gitignore"
+git -C "$unignored" worktree add -q -b chore/setup-sdlc "$unignored/.claude/worktrees/setup-sdlc" origin/main
+mkdir -p "$unignored/.sdlc" && echo x > "$unignored/.sdlc/lock"
+out="$(run "$unignored")"
+check "worktrees.gitignore fails" "fail" "$(status worktrees.gitignore "$out")"
+check "worktrees.main-clean ignores the worktrees and lock folders" "pass" "$(status worktrees.main-clean "$out")"
+
 echo "# uncommitted change in the main checkout"
 echo x > "$noignore/stray.txt"
 check "worktrees.main-clean warns" "warn" "$(status worktrees.main-clean "$(run "$noignore")")"
+
+# dev_doc <repo> <proxy mode>: a dev stack doc in the format of skills/dev-stack/CONTRACT.md.
+dev_doc() {
+  cat > "$1/docs/agents/dev-stack.md" <<EOF
+# Dev stack
+
+- Entry point: \`scripts/dev-stack\`
+- Strategy: A
+- Project: \`app\`
+- Health URL: \`/health\`
+- Cap: 4
+- Portless: 0.15.12
+- Proxy: $2
+
+## Safe mode
+
+- \`MAIL_TRANSPORT=console\`: mail goes to the log.
+
+## Browsers
+
+Safari may need one \`portless hosts sync\`.
+EOF
+}
 
 # A dev stack doc and contract, as setup-sdlc's Dev stack section records them.
 add_dev_stack() {
   local repo="$1"
   mkdir -p "$repo/scripts"
-  printf '# Dev stack\n\n- Portless version: 0.15.12, proxy mode HTTP on 1355.\n- Cap: 4\n' > "$repo/docs/agents/dev-stack.md"
+  dev_doc "$repo" "HTTP on 1355"
   printf '\n### Dev stack\n\nSee `docs/agents/dev-stack.md`.\n' >> "$repo/AGENTS.md"
   cat > "$repo/scripts/dev-stack" <<'EOF'
 #!/bin/sh
@@ -208,6 +240,23 @@ check "devstack.url passes" "pass" "$(status devstack.url "$out")"
 check "devstack.status passes" "pass" "$(status devstack.status "$out")"
 check "stacks.cap passes" "pass" "$(status stacks.cap "$out")"
 check "only read-only Portless calls" "--version doctor" "$(sort -u "$scratch/portless-calls" | tr '\n' ' ' | sed 's/ $//')"
+
+echo "# dev stack doc only, HTTPS mode, no contract yet"
+pending="$(set_up_repo pending)"
+dev_doc "$pending" "HTTPS on 443"
+printf '\n### Dev stack\n\nSee `docs/agents/dev-stack.md`.\n' >> "$pending/AGENTS.md"
+git -C "$pending" add -A && git -C "$pending" commit -q -m "dev stack doc"
+out="$(run "$pending" "$scratch/bin:$no_portless_path")"
+check "devstack.script fails" "fail" "$(status devstack.script "$out")"
+check "portless.proxy reads the doc's mode" "No proxy running; scripts/dev-stack up starts it in the recorded mode, HTTPS on 443." "$(detail portless.proxy "$out")"
+check "portless.ca fails in HTTPS mode without a trusted CA" "fail" "$(status portless.ca "$out")"
+check "portless.stale-routes reads the doc's project" "Aliases for worktrees that no longer exist: live.app gone.app" "$(detail portless.stale-routes "$out")"
+
+echo "# contract out of step with the doc"
+sed -i.bak 's/^PROXY_PORT=1355$/PROXY_PORT=443/' "$stack/scripts/dev-stack" && rm "$stack/scripts/dev-stack.bak"
+out="$(run "$stack" "$scratch/bin:$no_portless_path")"
+check "devstack.script warns" "warn" "$(status devstack.script "$out")"
+contains "names the mismatch" "PROXY_PORT=443" "$(detail devstack.script "$out")"
 
 echo
 if [ "$failures" -eq 0 ]; then echo "all passed"; else echo "$failures failed"; exit 1; fi

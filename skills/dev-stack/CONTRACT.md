@@ -51,15 +51,43 @@ Trust the Portless CA only for `https://` Dev URLs, scoped to the tool: `curl --
 
 ## The dev stack doc
 
-`docs/agents/dev-stack.md` records, in this order:
+`setup-sdlc` writes `docs/agents/dev-stack.md` in this format. `check-sdlc` reads the field lines by their exact `- <Field>: ` prefix, so keep each on one line.
 
-- Entry point: `scripts/dev-stack`.
-- Strategy (A or B) and project name (lowercase, `[a-z0-9-]`).
-- Health URL path, and the e2e command when the repo has an e2e suite.
-- Safe-mode variables and what each turns off.
-- Cap: the most stacks running at once on one machine (default 4).
-- Portless version (pinned, 0.15.12 when this was written) and proxy mode, with the HTTPS upgrade command when that mode is in use.
-- Browser notes: Chrome, Firefox, Edge, `curl` and Node's `fetch` resolve `*.localhost` on their own; Safari may need one `portless hosts sync`.
+~~~markdown
+# Dev stack
+
+- Entry point: `scripts/dev-stack`
+- Strategy: B
+- Project: `pumpkit`
+- Health URL: `/health`
+- e2e: `npm run e2e`
+- Cap: 4
+- Portless: 0.15.12
+- Proxy: HTTP on 1355
+
+## Safe mode
+
+- `VITE_BYPASS_AUTH=true`: skips the real sign-in provider.
+- `PUBLISHER_ENABLED=0`: the publisher worker stays off.
+
+## HTTPS upgrade
+
+```sh
+<the upgrade command, from setup-sdlc's Portless section>
+```
+
+## Browsers
+
+Chrome, Firefox, Edge, `curl` and Node's `fetch` resolve `*.localhost` on their own. Safari may not: run `portless hosts sync` once when a Dev URL doesn't resolve there.
+~~~
+
+- **Strategy** is `A` or `B` (see [Strategies](#strategies)). **Project** is lowercase `[a-z0-9-]`.
+- **e2e** is the command that runs the repo's e2e suite; leave the line out when there is none.
+- **Cap** is the most stacks running at once on one machine, 4 by default.
+- **Portless** is the pinned version. **Proxy** is the mode, `HTTP on <port>` or `HTTPS on <port>`: `HTTP on 1355` by default, `HTTPS on 443` after the upgrade.
+- **Safe mode** lists each variable `up` sets and what it turns off.
+- **HTTPS upgrade** is present only when the mode is HTTPS.
+- `scripts/dev-stack` repeats `PROJECT`, `PROXY_PORT` and `PROXY_TLS` (1 for HTTPS); `check-sdlc` warns when they disagree with the doc.
 
 ## Portless 0.15.12 notes
 
