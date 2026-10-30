@@ -24,9 +24,9 @@ Portability: the skills must work in every agent the README's support matrix nam
 
 Run `claude plugin validate .` after touching either manifest. Two warnings are expected: no `version` (on purpose, so installs follow the latest commit) and `CLAUDE.md` at the plugin root (it is repo context, not plugin context).
 
-`hooks/block-dangerous-git.sh` is the always-on git guardrail. When you change it, pipe sample `{"tool_input":{"command":"..."}}` payloads through it and check exit codes: 2 for blocked commands, 0 for allowed ones.
+`hooks/block-dangerous-git.sh` is the always-on git and Portless guardrail. `hooks/check-commit-slop.sh` blocks a `git commit` whose added comments fail `hooks/comment-slop.pl`.
 
-`hooks/check-commit-slop.sh` blocks a `git commit` whose added comments fail `hooks/comment-slop.pl`. When you change either, test the hook the same way with a `cwd` pointing at a scratch repo with staged changes, and pipe a known-clean history through the script (`git diff -U0 <first commit> HEAD | perl hooks/comment-slop.pl` on a repo the skills already cleaned): every finding there is a false positive to fix.
+Test the hooks with `hooks/test-hooks.sh`. It pipes each case's payload (`tool_input.command` or `tool_input.file_path`, plus `cwd`) through its hook, expects exit 2 for blocked and 0 for allowed, and builds the scratch repos the commit-slop cases need. When you change a hook, add a case for the change to the table and rerun the script. When you change `comment-slop.pl`, also pipe a known-clean history through it (`git diff -U0 <first commit> HEAD | perl hooks/comment-slop.pl` on a repo the skills already cleaned): every finding there is a false positive to fix.
 
 `skills/worktrees/scripts/worktree.sh` does the worktrees skill's git work. After changing it, run `tests/worktrees.sh`, which drives it against scratch repos under `$TMPDIR` and exits non-zero on any failing case.
 
