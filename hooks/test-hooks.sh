@@ -6,6 +6,10 @@
 here="$(cd "$(dirname "$0")" && pwd)"
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
+unset SDLC_ALLOW_MAIN_CHECKOUT
+export GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@example.com
+export GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=test@example.com
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
 
 # Scratch repos for the commit-slop cases, each with one staged file.
 scratch_repo() {
@@ -96,6 +100,87 @@ slop_check allow "$slop" 'SDLC_ALLOW_SLOP=1 git commit -m "add build"'
 slop_check block "$clean" "git -C $slop commit -m x"
 slop_check allow "$slop" 'echo "git commit"'
 slop_check allow "$slop" 'git status'
+
+# Main checkouts for the guard cases, each with a linked worktree at <worktrees folder>/x.
+# main_repo <name> <instruction file> <its text> [<worktrees folder override>]
+main_repo() {
+  local r="$scratch/$1" folder="${4:-.claude/worktrees}"
+  git init -q "$r"
+  printf '%s\n' "$3" >"$r/$2"
+  if [ -n "${4:-}" ]; then
+    mkdir -p "$r/docs/agents"
+    printf '# Worktrees\n\n## Folder\n\n`%s`\n' "$4" >"$r/docs/agents/worktrees.md"
+  fi
+  git -C "$r" add -A
+  git -C "$r" commit -qm init
+  git -C "$r" worktree add -q -b x "$r/$folder/x"
+}
+rule="$(printf '# Agents\n\n### Worktrees\n\nNever edit files or commit in the main checkout.')"
+main_repo ruled AGENTS.md "$rule"
+main_repo older CLAUDE.md "$rule"
+main_repo moved AGENTS.md "$rule" trees
+main_repo plain AGENTS.md '# Agents'
+main="$scratch/ruled"
+wt="$main/.claude/worktrees/x"
+
+edit() { check "$1" guard-main-checkout "$2" file_path "$3"; }
+run() { check "$1" guard-main-checkout "$2" command "$3"; }
+
+edit block "$main" "$main/src/app.js"
+edit block "$main" 'src/app.js'
+edit block "$main" "$main/AGENTS.md"
+edit block "$wt" "$main/src/app.js"
+edit block "$wt" "$wt/../../../src/app.js"
+edit block "$scratch" "$main/src/app.js"
+SDLC_ALLOW_MAIN_CHECKOUT=1 edit allow "$main" "$main/src/app.js"
+edit allow "$wt" "$wt/src/app.js"
+edit allow "$main" "$wt/src/app.js"
+edit allow "$main" "$main/.claude/worktrees/new/src/app.js"
+edit allow "$main" "$main/.sdlc/lock"
+edit allow "$main" "$main/docs/architecture-improvements/app-2026-10-30.md"
+edit allow "$main" "$scratch/notes.md"
+edit allow "$main" "$HOME/.claude/projects/x/memory/MEMORY.md"
+edit block "$scratch/older" "$scratch/older/src/app.js"
+edit allow "$scratch/moved" "$scratch/moved/trees/x/src/app.js"
+edit block "$scratch/moved" "$scratch/moved/.claude/worktrees/x/src/app.js"
+edit allow "$scratch/plain" "$scratch/plain/src/app.js"
+check block guard-main-checkout "$main" notebook_path "$main/analysis.ipynb"
+
+run block "$main" 'git commit -m x'
+run allow "$wt" 'git commit -m x'
+run block "$wt" "git -C $main commit -m x"
+run block "$scratch" "git -C $main commit -m x"
+run allow "$main" 'git -C .claude/worktrees/x commit -m x'
+run allow "$main" 'cd .claude/worktrees/x && git commit -m x'
+run block "$wt" "cd $main && git commit -m x"
+run block "$main" 'git -c user.name=x commit -m x'
+run block "$main" 'git status && git add .'
+run block "$main" 'git checkout feat/x'
+run block "$main" 'git checkout -b feat/y'
+run block "$main" 'git switch feat/x'
+run block "$main" 'git merge feat/x'
+run allow "$main" 'git merge --ff-only origin/main'
+run block "$main" 'git pull'
+run block "$main" 'git pull --rebase origin main'
+run allow "$main" 'git pull --ff-only'
+run block "$main" 'git rebase origin/main'
+run block "$main" 'git stash'
+run block "$main" 'git stash pop'
+run allow "$main" 'git stash list'
+run block "$main" 'git cherry-pick abc123'
+run block "$main" 'git revert HEAD'
+run block "$main" 'git apply fix.patch'
+run allow "$main" 'git apply --check fix.patch'
+run block "$main" 'git am fix.patch'
+run allow "$main" 'git status'
+run allow "$main" 'git log --oneline -5'
+run allow "$main" 'git fetch origin'
+run allow "$main" 'git worktree add -b feat/y .claude/worktrees/y origin/main'
+run allow "$main" 'echo "git commit -m x"'
+run allow "$wt" 'git commit -m "never git add in the main checkout"'
+SDLC_ALLOW_MAIN_CHECKOUT=1 run allow "$main" 'git commit -m x'
+run block "$scratch/older" 'git commit -m x'
+run allow "$scratch/plain" 'git commit -m x'
 
 printf '%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" = 0 ]
