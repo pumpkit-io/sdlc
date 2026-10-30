@@ -10,6 +10,8 @@ Break a plan, spec, or conversation into a set of **tickets**: tracer-bullet ver
 
 The issue tracker should have been provided to you. If not, tell the user to run `/setup-sdlc`.
 
+Load the `worktrees` skill and resolve the worktree for this work before writing anything.
+
 ## Process
 
 ### 1. Gather context
@@ -45,7 +47,7 @@ Check every ticket against the vertical-slice rules, and check that each blockin
 
 ### 5. Publish the tickets to the configured tracker
 
-Load the `prose-style` skill and write every ticket body in that style. A ticket that builds UI points to the spec's UI Design section instead of restating the design. A ticket that builds UI points to the spec's UI Design section instead of restating the design.
+Load the `prose-style` skill and write every ticket body in that style. A ticket that builds UI points to the spec's UI Design section instead of restating the design. Every ticket starts with the spec's **Feature branch link** (`Branch: <branch>`), copied as it is; without a spec, the link names the branch this session's worktree is on.
 
 Publish the tickets. **How** depends on the tracker `/setup-sdlc` configured; the tickets are the same either way, only the shape of the blocking edges changes:
 
@@ -59,6 +61,8 @@ Do NOT close or modify any parent issue.
 <local-ticket-template>
 
 # <NN>: <Ticket title>
+
+Branch: <feature branch>
 
 **What to build:** the end-to-end behaviour this ticket makes work, from the user's perspective, not a layer-by-layer implementation list.
 
@@ -74,6 +78,8 @@ Do NOT close or modify any parent issue.
 </local-ticket-template>
 
 <issue-template>
+
+Branch: <feature branch>
 
 ## Parent
 
@@ -102,4 +108,4 @@ In either form, avoid specific file paths or code snippets: they go stale fast. 
 
 ## Finishing
 
-The published tickets are this skill's only output. Close by listing them in dependency order, each with its title, its link (or file path, for local files) and its blockers, then naming the next step: a fresh session per frontier ticket with `implement <ticket>`, or `implement-spec <spec>` to run them all unattended.
+The published tickets are this skill's only output. Close by listing them in dependency order, each with its title, its link (or file path, for local files) and its blockers, then naming the next step: a fresh session per frontier ticket with `implement <ticket>`, or `implement-spec <spec>` to run them all unattended. Last, release this session's worktree lock, as the `worktrees` skill's Release section says.
