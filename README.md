@@ -33,11 +33,9 @@ The skills land in `.agents/skills/` (the folder Codex, Cursor, Gemini CLI, Copi
 
 ### Then, once per project repo
 
-Run `setup-sdlc` (see [Invoking skills](#invoking-skills) for your agent's syntax). It records the repo's issue tracker and doc layout in `AGENTS.md` and `docs/agents/`. On GitHub it also offers a CI workflow that checks every pull request for comment slop and runs `review-changes` on it with your Claude subscription, failing the check when the review's verdict is blocking.
+Run `setup-sdlc` (see [Invoking skills](#invoking-skills) for your agent's syntax). It records the repo's issue tracker and doc layout in `AGENTS.md` and `docs/agents/`, and how each new worktree gets ready to run. On GitHub it also offers a CI workflow that checks every pull request for comment slop and runs `review-changes` on it with your Claude subscription, failing the check when the review's verdict is blocking. In a repo with an app, it installs Portless, starts its proxy on plain HTTP with no `sudo`, and either drafts `scripts/dev-stack` or opens one issue listing what keeps two copies of the app from running side by side. It writes on a `chore/setup-sdlc` branch, offers a pull request, and ends by running `check-sdlc`.
 
-Already set up a repo with an older version that wrote to `CLAUDE.md`? Re-run `setup-sdlc` once: it moves the block to `AGENTS.md`, where other agents can see it.
-
-After updating the plugin, on a new machine, or when something behaves oddly, run `check-sdlc`. It checks the setup on this machine and in this repo, fixes what you approve and checks again.
+Re-run `setup-sdlc` only to switch issue trackers or start over. For everything else, run `check-sdlc`: after updating the plugin, on a new machine, when something behaves oddly, or on a repo an older version set up in `CLAUDE.md`. It checks the setup on this machine and in this repo, fixes what you approve and checks again.
 
 ## Invoking skills
 

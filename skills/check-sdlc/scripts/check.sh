@@ -249,7 +249,8 @@ else
   emit worktrees.stale-locks skip "worktree.sh list failed."
 fi
 
-dirty="$(git -C "$main" status --porcelain)"
+# Worktrees and locks are left out: before their gitignore entries merge they show as untracked.
+dirty="$(git -C "$main" status --porcelain -- . ":(exclude)$folder" ":(exclude).sdlc")"
 if [ -z "$dirty" ]; then
   emit worktrees.main-clean pass "The main checkout has no uncommitted changes."
 else
@@ -260,15 +261,29 @@ fi
 
 dev_script="$top/scripts/dev-stack"
 project="" pinned="" cap=4 rec_port="" rec_tls=""
+# The doc's field lines, in the format of skills/dev-stack/CONTRACT.md.
+field() { sed -n "s/^- $1: \(.*\)\$/\1/p" "$dev_doc" | head -n 1 | tr -d '`'; }
 if [ -f "$dev_doc" ]; then
-  pinned="$(grep -i portless "$dev_doc" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)"
-  n="$(grep -iE '(^|[^a-z])cap([^a-z]|$)' "$dev_doc" | grep -oE '[0-9]+' | head -n 1)"
-  [ -n "$n" ] && cap="$n"
+  project="$(field Project)"
+  pinned="$(field Portless)"
+  n="$(field Cap)"
+  case "$n" in ''|*[!0-9]*) ;; *) cap="$n" ;; esac
+  proxy="$(field Proxy)"
+  case "$proxy" in
+    "HTTP on "*) rec_tls=0 rec_port="${proxy#HTTP on }" ;;
+    "HTTPS on "*) rec_tls=1 rec_port="${proxy#HTTPS on }" ;;
+  esac
+  case "$rec_port" in *[!0-9]*) rec_port="" ;; esac
 fi
+
+# The contract's own copies of the record must match the doc.
+script_drift=""
 if [ -f "$dev_script" ]; then
-  project="$(sed -n 's/^PROJECT="\{0,1\}\([a-z0-9-]*\)"\{0,1\}$/\1/p' "$dev_script" | head -n 1)"
-  rec_port="$(sed -n 's/^PROXY_PORT=\([0-9]*\)$/\1/p' "$dev_script" | head -n 1)"
-  rec_tls="$(sed -n 's/^PROXY_TLS=\([01]\)$/\1/p' "$dev_script" | head -n 1)"
+  for pair in "PROJECT:$project" "PROXY_PORT:$rec_port" "PROXY_TLS:$rec_tls"; do
+    var="${pair%%:*}" want="${pair#*:}"
+    got="$(sed -n "s/^$var=\"\{0,1\}\([a-z0-9-]*\)\"\{0,1\}\$/\1/p" "$dev_script" | head -n 1)"
+    [ -n "$got" ] && [ -n "$want" ] && [ "$got" != "$want" ] && script_drift="$script_drift $var=$got (doc: $want)"
+  done
 fi
 have_portless=""
 command -v portless >/dev/null 2>&1 && have_portless=1
@@ -300,7 +315,7 @@ else
   [ "${code:-000}" = "000" ] && [ -n "$run_port" ] && code="$(curl -sk -o /dev/null -m 2 -w '%{http_code}' "https://127.0.0.1:$run_port/" 2>/dev/null)"
   mode() { if [ "$2" = 1 ]; then printf 'HTTPS on %s' "$1"; else printf 'HTTP on %s' "$1"; fi; }
   if [ -z "$rec_port" ]; then
-    emit portless.proxy warn "scripts/dev-stack records no PROXY_PORT."
+    emit portless.proxy warn "The dev stack doc has no '- Proxy: HTTP on <port>' or '- Proxy: HTTPS on <port>' line."
   elif [ "${code:-000}" = "000" ]; then
     emit portless.proxy warn "No proxy running; scripts/dev-stack up starts it in the recorded mode, $(mode "$rec_port" "${rec_tls:-0}")."
   elif [ "$run_port" != "$rec_port" ] || [ "${run_tls:-0}" != "${rec_tls:-0}" ]; then
@@ -324,7 +339,7 @@ else
   fi
 
   if [ -z "$project" ]; then
-    emit portless.stale-routes skip "scripts/dev-stack records no PROJECT."
+    emit portless.stale-routes skip "The dev stack doc has no '- Project:' line."
   elif ! command -v jq >/dev/null 2>&1; then
     emit portless.stale-routes skip "jq is not on PATH."
   else
@@ -359,12 +374,17 @@ else
     emit devstack.script fail "scripts/dev-stack is not executable."
     emit devstack.url skip "scripts/dev-stack is not executable."
     emit devstack.status skip "scripts/dev-stack is not executable."
-  elif [ -z "$have_portless" ]; then
+  elif [ -n "$script_drift" ]; then
+    emit devstack.script warn "scripts/dev-stack disagrees with the dev stack doc:$script_drift"
+  else
     emit devstack.script pass "scripts/dev-stack"
+  fi
+  if [ ! -x "$dev_script" ]; then
+    :
+  elif [ -z "$have_portless" ]; then
     emit devstack.url skip "Portless is not installed."
     emit devstack.status skip "Portless is not installed."
   else
-    emit devstack.script pass "scripts/dev-stack"
     url="$(cd "$top" && scripts/dev-stack url </dev/null 2>/dev/null)"; url_code=$?
     url="$(printf "%s\n" "$url" | tail -n 1)"
     case "$url" in

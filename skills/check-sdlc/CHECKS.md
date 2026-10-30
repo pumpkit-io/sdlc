@@ -9,7 +9,7 @@ Each row gives the fix and its kind:
 - **user-only**: needs `sudo`, a secret, the user's own checkout, or a command the guardrail blocks for agents. Never run it: list the exact command for the user.
 - **setup choice**: the fix would change a decision `setup-sdlc` asked the user to make. Never offered: point to the named section.
 
-`<main>` is the **Main checkout**, `<default>` the default branch, `<pinned>` the Portless version in `docs/agents/dev-stack.md`, `<wt>` the path of `skills/worktrees/scripts/worktree.sh`. Setup sections are those of `setup-sdlc`: A Issue tracker, B Triage labels, C Domain docs, D Design direction, E CI review, F Worktrees, G Portless, H Dev stack, and step 4, Write, for the `## Agent skills` block.
+`<main>` is the **Main checkout**, `<default>` the default branch, `<pinned>` the version on the `- Portless:` line of `docs/agents/dev-stack.md` (format in `skills/dev-stack/CONTRACT.md`), `<wt>` the path of `skills/worktrees/scripts/worktree.sh`. Setup sections are those of `setup-sdlc`: A Issue tracker, B Triage labels, C Domain docs, D Design direction, E CI review, F Worktrees, G Portless, H Dev stack, and step 4, Write, for the `## Agent skills` block.
 
 ## Setup
 
@@ -78,7 +78,7 @@ All three skip when `origin` is not on GitHub.
 | `worktrees.missing-dirs` | No worktree registered without its folder | script | `git worktree list --porcelain` shows nothing `prunable` | `git -C <main> worktree prune` | automatic | none |
 | `worktrees.merged` | No leftover merged worktrees | script | No unlocked worktree has zero commits ahead of `origin/<default>`, as of the last fetch | `bash <wt> sweep`, which fetches first and leaves anything dirty, locked or unmerged | approval | none |
 | `worktrees.stale-locks` | No abandoned locks | script | No lock is stale (two hours with no file change and no commit) | `bash <wt> release <path>` for each lock the user confirms no session holds | approval | none |
-| `worktrees.main-clean` | The main checkout holds no agent changes | script | `git -C <main> status --porcelain` is empty | Review with `git -C <main> status`, then commit, move or discard the changes yourself | user-only | none |
+| `worktrees.main-clean` | The main checkout holds no agent changes | script | `git -C <main> status --porcelain` is empty outside the worktrees folder and `.sdlc/` | Review with `git -C <main> status`, then commit, move or discard the changes yourself | user-only | none |
 
 ## Portless and the proxy
 
@@ -88,7 +88,7 @@ All skip when the repo has no `docs/agents/dev-stack.md`, and all but `portless.
 |---|---|---|---|---|---|---|
 | `portless.installed` | Portless is on this machine | script | `portless` is on `PATH` | `npm install -g portless@<pinned>` into the user-owned npm prefix | approval (user-only when the prefix needs `sudo`) | G |
 | `portless.version` | The pinned version | script | `portless --version` equals `<pinned>`. Warns on a mismatch. | `npm install -g portless@<pinned>` | approval | G |
-| `portless.proxy` | The proxy runs in the recorded mode | script | A proxy answers on the port in `$PORTLESS_STATE_DIR/proxy.port` with the `PROXY_PORT` and `PROXY_TLS` recorded in `scripts/dev-stack` | Not running, HTTP mode: `PORTLESS_SYNC_HOSTS=0 portless proxy start -p 1355 --no-tls` (automatic). Not running, HTTPS mode: the upgrade command in the doc (user-only). Another mode: `portless proxy stop`, then the recorded start command, or keep it and change the recorded mode in Section G (user-only). | see Fix | G |
+| `portless.proxy` | The proxy runs in the recorded mode | script | A proxy answers on the port in `$PORTLESS_STATE_DIR/proxy.port` in the mode on the doc's `- Proxy:` line | Not running, HTTP mode: `PORTLESS_SYNC_HOSTS=0 portless proxy start -p <port> --no-tls` (automatic). Not running, HTTPS mode: the upgrade command in the doc (user-only). Another mode: `portless proxy stop`, then the recorded start command, or keep it and change the recorded mode in Section G (user-only). | see Fix | G |
 | `portless.doctor` | Portless's own health check | script | `portless doctor` exits 0 with no `fail` line | Run the command the failing line suggests | user-only | G |
 | `portless.ca` | Browsers and tools trust HTTPS Dev URLs | script | In HTTPS mode, `portless doctor` reports the CA trusted. Skips in HTTP mode. | `portless trust` | user-only | G |
 | `portless.stale-routes` | No aliases left by deleted worktrees | script | Every static alias `<slug>.<project>.localhost` has a live worktree with that Slug; the main checkout's `<project>.localhost` is never stale | `portless alias --remove <slug>.<project>` for each route the detail lists, and no other | approval | none |
@@ -102,7 +102,7 @@ The script's dev stack checks skip without `docs/agents/dev-stack.md`.
 |---|---|---|---|---|---|---|
 | `devstack.needed` | A repo with an app has a contract | judgment | The repo has no runnable app by setup's Explore signals, or it has the dev stack doc | Run Section H of `setup-sdlc` | setup choice | H |
 | `devstack.doc` | The dev stack doc | script | `docs/agents/dev-stack.md` exists | Run Section H | setup choice | H |
-| `devstack.script` | The contract's entry point | script | `scripts/dev-stack` exists and is executable | Missing: Section H (setup choice). Not executable: `chmod +x scripts/dev-stack` and `git update-index --chmod=+x scripts/dev-stack` (automatic). | see Fix | H |
+| `devstack.script` | The contract's entry point | script | `scripts/dev-stack` exists and is executable, and its `PROJECT`, `PROXY_PORT` and `PROXY_TLS` match the doc's Project and Proxy lines. Warns on a mismatch. | Missing: Section H, or the open "Make the dev stack worktree-safe" issue (setup choice). Not executable: `chmod +x scripts/dev-stack` and `git update-index --chmod=+x scripts/dev-stack` (automatic). Mismatch: set the script's variables to the doc's values (approval). | see Fix | H |
 | `devstack.url` | `url` answers | script | `scripts/dev-stack url` prints an `http://` or `https://` URL as its last line. Skips without Portless. | File one issue on the tracker, "Make scripts/dev-stack follow the dev stack contract", with the detail | approval | H |
 | `devstack.status` | `status` answers | script | `scripts/dev-stack status` prints `running` with exit 0 or `stopped` with exit 3. Skips without Portless. | The same issue as `devstack.url` | approval | H |
 | `devstack.blockers` | No new isolation blockers | judgment | Setup's Explore finds none of the blockers it lists (fixed host ports, a fixed Compose name, hard-coded app URLs, e2e URLs pinned to a port, a shared database, workers with outside effects) that the contract doesn't already handle | File one issue, "Make the dev stack worktree-safe", listing each blocker with its file | approval | H |
