@@ -59,10 +59,14 @@ As of 2026-10. Agents change fast; open an issue if a row is out of date.
 | Command skills run only when you invoke them | yes | yes (via `agents/openai.yaml`) | yes | yes (VS Code) | no, the model may load them | no, the model may load them |
 | Reference skills hidden from menus | yes | no | no | yes (VS Code) | no | no |
 | Parallel sub-agents (review-changes, implement-spec, deslop, refresh-spec) | yes | not verified | not verified | not verified | not verified | not verified |
-| Git and Portless guardrail hook | yes | no | no | no | no | no |
+| Worktree per session, chosen by the skills | yes, and the session switches into it | yes, by absolute paths and `git -C` | yes, by absolute paths and `git -C` | yes, by absolute paths and `git -C` | yes, by absolute paths and `git -C` | yes, by absolute paths and `git -C` |
 | Main checkout write guard | yes | no | no | no | no | no |
+| Dev stack per worktree | yes | yes | yes | yes | yes | yes |
+| Git and Portless guardrail hook (force pushes, `worktree remove --force`, proxy-breaking Portless commands) | yes | no | no | no | no | no |
 | Comment slop check at commit | yes | no | no | no | no | no |
 | Instruction file it reads | `CLAUDE.md`, which imports `AGENTS.md` | `AGENTS.md` | `AGENTS.md` | not verified | `GEMINI.md` (point it at `AGENTS.md`) | `AGENTS.md` |
+
+The dev stack runs in any agent that can run shell commands, since it is only `scripts/dev-stack` and Portless. Only Claude Code moves the session into a worktree; the other agents stay where they started and work in the worktree by path, which the `worktrees` skill tells them to do.
 
 Without sub-agents, `review-changes` runs its three reviews one after another, `deslop` runs its waves in the current session, `refresh-spec` compares one ticket at a time, and `implement-spec` stops and tells you to run `implement` one ticket at a time.
 
@@ -80,30 +84,45 @@ Plus three hooks in Claude Code: git guardrails, the main-checkout guard and the
 
 ### Feature (main flow)
 
+Open the agent in your **Main checkout**, on any branch, and type the skills below. You never create a branch or a worktree yourself: the skills do it.
+
 ```
-git checkout -b feat/<name>
-grill-with-docs <idea>      interview; updates GLOSSARY.md and ADRs
-to-spec                     spec issue on the tracker
-to-tickets                  vertical-slice tickets with blocking links
-(fresh session)
-implement <ticket>          one ticket per fresh session
+grill-with-docs <idea>      creates .claude/worktrees/<slug>/ on feat/<slug>, then
+                            interviews; updates GLOSSARY.md and ADRs there
+to-spec                     spec issue on the tracker, starting "Branch: feat/<slug>"
+to-tickets                  vertical-slice tickets with blocking links, each with
+                            the same Branch line
+(fresh session, in the main checkout again)
+implement <ticket>          follows the Branch line into the feature's worktree;
+                            in a repo with an app, ends with the change running
+                            at its Dev URL
   or implement-spec <spec>  all tickets in parallel worktrees, unattended
 review-changes main         final three-axis review of the whole branch
 "open a PR"                 body shaped by the pr skill
+(after merging)
+worktrees sweep             removes every clean worktree whose branch is merged
 ```
 
+Each skill says where it moved the session in one line (`Worktree: <path> (<branch>)`). Your routine stays the same, and your main checkout stays as you left it: no agent edits or commits there. Start as many grilling sessions at once as you like; each gets its own worktree and branch, and ADR numbers stay distinct across branches. Two sessions never share a worktree: a second `implement` on the same feature stops, names the session holding the worktree's lock, and points you to `implement-spec`.
+
+A Dev URL looks like `http://<slug>.<project>.localhost:1355`, one per worktree, so several stacks run side by side. Open it to try what the agent built; the stack stays up until the worktree is finished.
+
 - Tickets written a while ago: `refresh-spec <spec>` first, to update them to the code as it is now.
-- Small work that fits one session: `grill-with-docs`, then `implement` in the same session.
+- Small work that fits one session: `grill-with-docs`, then `implement` in the same session and worktree.
+- A raw idea with no spec: `implement <idea>` creates its own worktree on a new branch.
 - Features with a UI: `ui-design` joins the grilling, its design plan goes into the spec, and implementers build to it.
 - UI or state model unclear: during grilling run `handoff`, prototype in a fresh session, `handoff` back.
+- Prefer `claude -w`? Start the session in a worktree yourself; the skills see they are already in one and stay.
+
+To opt out for one session, start it with `SDLC_ALLOW_MAIN_CHECKOUT=1`: the main-checkout guard lets the agent write in your checkout. To drop the rule for a repo, delete the `### Worktrees` block from its `AGENTS.md`; the guard then does nothing there, and only the skills that resolve a worktree as their first step still create one.
 
 ### Bug
 
-Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes with a regression test. Then `review-changes main` and a PR. If it reports there is no good seam for the test, run `improve-codebase-architecture` on that area.
+Describe the symptom. `diagnosing-bugs` creates a `fix/<slug>` worktree, builds a failing loop there first (against the worktree's dev stack when the loop needs a server), then fixes with a regression test. Then `review-changes main` and a PR. If it reports there is no good seam for the test, run `improve-codebase-architecture` on that area.
 
 ### Inbound (open-source repos, weekly)
 
-`triage show me what needs attention`. Issues it marks `ready-for-agent` go to `implement #N` on a branch.
+`triage show me what needs attention`. Issues it marks `ready-for-agent` go to `implement #N`, which creates the worktree for each.
 
 ### Upkeep
 
@@ -114,7 +133,8 @@ Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes 
 
 - Keep grilling, spec and tickets in one session; start a fresh session (`/clear` in Claude Code) only after `to-tickets`.
 - One ticket per fresh session.
-- `implement` finds or creates its worktree and commits to that worktree's branch.
+- Every unit of work lives in its own worktree under `.claude/worktrees/`, and the skills choose it before their first write. A session where no skill ran follows the same rule from `AGENTS.md`: before its first file change it resolves a `chore/` (or `feat/`, `fix/`) worktree.
+- New worktrees branch from `origin/<default>`, not from what your main checkout has checked out. A skill that needs the branch your main checkout is on stops and tells you, rather than switch your checkout.
 
 ## Files the skills expect in each project repo
 
@@ -129,6 +149,11 @@ Describe the symptom. `diagnosing-bugs` builds a failing loop first, then fixes 
 | `.out-of-scope/` | triage | triage |
 | `DESIGN.md` (repos with a UI) | setup, update-design | ui-design, deslop, review-changes |
 | `.github/workflows/sdlc-review.yml` (GitHub repos) | setup | GitHub Actions, on every pull request |
+| `docs/agents/worktrees.md` | setup | worktrees: the files copied into each new worktree and its install command |
+| `docs/agents/dev-stack.md` (repos with an app) | setup | dev-stack, implement, implement-spec, check-sdlc: the strategy, project name, Portless version and proxy mode, and the stack cap |
+| `scripts/dev-stack` (repos with an app) | setup, or `implement` on the "Make the dev stack worktree-safe" issue | dev-stack, worktrees, check-sdlc: the contract's `up`, `down`, `destroy`, `url`, `status` and `logs` |
+| `.claude/worktrees/` (gitignored) | worktrees | every writing skill: one worktree per unit of work |
+| `.sdlc/` (gitignored, in each worktree) | worktrees, dev-stack | worktrees: the session lock; the dev stack's pids, logs and screenshots under `.sdlc/dev-stack/` |
 
 Gemini CLI reads `GEMINI.md`: import `AGENTS.md` from it, or set `context.fileName` to include `AGENTS.md`.
 
