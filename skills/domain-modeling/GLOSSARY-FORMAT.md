@@ -28,6 +28,7 @@ _Avoid_: Client, buyer, account
 - **Keep definitions tight.** One or two sentences max. Define what it IS, not what it does.
 - **Only include terms specific to this project's context.** General programming concepts (timeouts, error types, utility patterns) don't belong even if the project uses them extensively. Before adding a term, ask: is this a concept unique to this context, or a general programming concept? Only the former belongs.
 - **Group terms under subheadings** when natural clusters emerge. If all terms belong to a single cohesive area, a flat list is fine.
+- **Add a new term next to the term it relates to**: directly after it, under the same subheading. A term related to none goes at the end of the subheading it fits. Parallel branches that each append at the end of the file conflict on every merge.
 
 ## Single vs multi-context repos
 

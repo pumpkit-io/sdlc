@@ -24,7 +24,15 @@ Only include these when they add genuine value. Most ADRs won't need them.
 
 ## Numbering
 
-Scan `docs/adr/` for the highest existing number and increment by one.
+Parallel sessions write ADRs on different branches, so the next number is the highest one found on `origin/<default>`, on every local branch and in every worktree's uncommitted files, plus one. Run `git fetch origin`, then this prints the highest (swap `docs/adr` for the context's ADR folder in a multi-context repo):
+
+```sh
+{ git for-each-ref --format='%(refname)' refs/heads "$(git symbolic-ref refs/remotes/origin/HEAD)" | xargs -I{} git ls-tree --name-only {} docs/adr/; git worktree list --porcelain | sed -n 's/^worktree //p' | xargs -I{} ls {}/docs/adr 2>/dev/null; } | sed 's|.*/||' | grep -o '^[0-9]\{4\}' | sort -u | tail -1
+```
+
+No output means no ADR exists yet: start at `0001`. Write the ADR file as soon as you pick its number, so a parallel session's scan sees it.
+
+A branch on another machine can still take the same number. That collision is resolved at merge: the branch merged second renames its ADR to the next free number and updates every reference to it.
 
 ## When to offer an ADR
 
