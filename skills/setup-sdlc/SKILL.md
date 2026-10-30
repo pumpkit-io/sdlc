@@ -105,7 +105,7 @@ Add to the drafts: the `.gitignore` lines `.claude/worktrees/` and `.sdlc/` that
 
 Show the user a draft of:
 
-- The `## Agent skills` block to write to `AGENTS.md`, plus any `CLAUDE.md` edit step 4 calls for (adding `@AGENTS.md`, or removing an old block)
+- The `## Agent skills` block to write to `AGENTS.md`, plus any `CLAUDE.md` edit step 4 calls for (adding `@AGENTS.md`, removing an old block, or creating `CLAUDE.md` with that one line)
 - The contents of `docs/agents/issue-tracker.md`, `docs/agents/domain.md`, and `docs/agents/triage-labels.md` (the last only when the user gave label overrides in Section B)
 - `DESIGN.md`, only when the user chose the empty skeleton in Section D
 - `.github/workflows/sdlc-review.yml`, only when the user said yes in Section E
@@ -131,7 +131,7 @@ Then, only if `CLAUDE.md` exists:
 - If it doesn't already contain an `@AGENTS.md` line, add `@AGENTS.md` as its first line.
 - If it holds an `## Agent skills` block from an earlier setup, remove that block: its content now lives in `AGENTS.md`.
 
-If `CLAUDE.md` doesn't exist, don't create it. Never edit `GEMINI.md`.
+If `CLAUDE.md` doesn't exist, create it holding the one line `@AGENTS.md` when the user approved it in step 3, so Claude Code reads the block; `check-sdlc` offers the same file. Never edit `GEMINI.md`.
 
 The block:
 
@@ -203,6 +203,6 @@ Release this session's worktree lock, as the `worktrees` skill's Release section
 
 Tell the user the setup is complete and which engineering skills will now read from these files. If a `DESIGN.md` now exists, add that it changes only through `update-design`. If the CI review was installed, remind the user to add the `CLAUDE_CODE_OAUTH_TOKEN` secret before the next pull request. Mention they can edit `docs/agents/*.md` directly later. Re-running this skill is for switching issue trackers or starting over; for anything else that looks wrong later, they run `check-sdlc`.
 
-Say which file got the block and whether `CLAUDE.md` is linked to it (by import or symlink). If there is no `CLAUDE.md`, add one line for Claude Code users: create a `CLAUDE.md` containing `@AGENTS.md`.
+Say which file got the block and whether `CLAUDE.md` is linked to it (by import or symlink). If the user declined a `CLAUDE.md`, add one line for Claude Code users: create a `CLAUDE.md` containing `@AGENTS.md`.
 
 End with the checks that still fail, each with the exact command only the user can run (the HTTPS upgrade, the review secret, a `sudo` install), or with the one line `check-sdlc` printed when everything passed.
