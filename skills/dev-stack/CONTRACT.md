@@ -13,7 +13,7 @@ A repo with no app has neither, and no skill mentions a stack there.
 |---|---|---|---|
 | `up` | Idempotent. Starts the Portless proxy in the recorded mode if it isn't running; starts the stack with its own ports and data; migrates, and seeds the first time; registers the route; waits for the health check up to a timeout. Never prompts. | The **Dev URL** as the last stdout line. Progress and reasons go to stderr. | 0 when healthy; non-zero with a one-line reason on stderr otherwise. |
 | `down` | Stops the stack and removes its route. Keeps its data. | Nothing required. | 0, also when already stopped. |
-| `destroy` | `down`, then deletes the stack's data (database, volumes, logs, seed marker). | Nothing required. | 0, also when nothing is left. |
+| `destroy` | `down`, then deletes the stack's data (database, volumes, logs, seed marker), starting a stopped shared container to drop its database before the seed marker goes. | Nothing required. | 0, also when nothing is left. |
 | `url` | Computes the Dev URL whether or not the stack is running. | The Dev URL. | 0. |
 | `status` | Checks the stack's processes and its health URL. | `running` or `stopped`. | 0 for `running`, 3 for `stopped`. |
 | `logs [service]` | Shows server output. | With a service: its recent output. Without: one `service: path` line per log file, or recent output of every service. | 0. |
@@ -21,14 +21,14 @@ A repo with no app has neither, and no skill mentions a stack there.
 ## Rules
 
 - **Location-agnostic.** The script derives everything from `git rev-parse --show-toplevel` and the branch, so the same file runs in the **Main checkout**, a **Feature worktree** and an **Implementer worktree**.
-- **Names from the Slug.** Route `<slug>.<project>`, Compose project `<project>-<slug>`, database `<project>_<slug>` (dashes turned into underscores, at most 63 characters). Take the hostname from `portless get <project>`, so the **Slug** is exactly the prefix `portless run` adds in a linked worktree. In the Main checkout Portless adds no prefix: the route is `<project>`, and the other names use `main` in place of the slug.
+- **Names from the Slug.** Route `<slug>.<project>`, Compose project `<project>-<slug>`, database `<project>_<slug>` (dashes turned into underscores, at most 63 characters). Take the hostname from `portless get <project>`, so the **Slug** is exactly the prefix `portless run` adds in a linked worktree. In the Main checkout Portless adds no prefix: the route, the Compose project and the database are all `<project>`, which no Slug can produce, so a branch ending in `main` gets names of its own. Without Portless installed, `down` and `destroy` still run: they derive the Slug from the branch with the `worktrees` skill's Slug rule.
 - **No fixed host ports or container names.** Portless picks the app port (strategy A), or Compose publishes `127.0.0.1::<container port>` and the script reads the port back (strategy B). A container shared on purpose across worktrees, such as strategy A's Postgres, has one fixed name and holds one database per Slug.
 - **The app is told its Dev URL** through the variable it reads its public URL from, and derives scheme, cookie flags and absolute URLs from it. Nothing in the app pins `localhost:<port>`.
 - **Safe mode by default.** `up` sets the variables that turn off, or point at fakes, every worker with an outside effect: publishing, mail, payments, webhooks to third parties.
 - **Dev credentials only.** The stack runs on throwaway local credentials; nothing in the contract reads production secrets or reaches production services.
 - **e2e suites read `E2E_BASE_URL`.** Health checks, Playwright configs and global setups take their base URL from it instead of a pinned port.
 - **Only its own route.** `up` registers only this worktree's route. `portless alias <route> <port> --force` is allowed on that route alone; `portless run --force` is never used.
-- **Gitignored state.** Pids, logs and markers live under `.sdlc/dev-stack/`.
+- **Gitignored state.** Pids, logs and markers live under `.sdlc/dev-stack/`. A pid file records the process start time too, and a pid whose process started at another time belongs to someone else: `up` starts its own, and `down` leaves that process alone.
 
 ## Dev URLs and proxy modes
 
