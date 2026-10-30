@@ -7,6 +7,8 @@ disable-model-invocation: true
 
 Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save it to the temporary directory of the user's OS, outside the current workspace. Load the `prose-style` skill and write the document in that style.
 
+When the session works in a **Worktree**, name its absolute path and branch near the top, so the next session resumes there.
+
 Include a "suggested skills" section in the document, naming which skills the next agent should load.
 
 Do not duplicate content already captured in other artifacts (specs, plans, ADRs, issues, commits, diffs). Reference them by path or URL instead.
