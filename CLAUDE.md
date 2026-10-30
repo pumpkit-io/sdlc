@@ -8,6 +8,14 @@ Issues live in GitHub Issues on `pumpkit-io/sdlc`, managed with the `gh` CLI. Se
 
 Single-context: one root `GLOSSARY.md` plus ADRs in `docs/adr/`. See `docs/agents/domain.md`.
 
+### Code comments
+
+Load the `code-comments` skill before writing or editing any comment.
+
+### Worktrees
+
+Never edit files or commit in the main checkout, even for a one-line change. Before your first file change or commit, load the `worktrees` skill and resolve a worktree for the work, then work and commit there. Release its lock when the work is committed. The one exception is a main-checkout path a skill names, such as `improve-codebase-architecture`'s notes.
+
 ## Repo rules
 
 Every skill lives in `skills/<name>/` and ships in the plugin: each one has an entry in `.claude-plugin/plugin.json`'s `skills` array and in the skill-types table in `README.md`. Adding, renaming or removing a skill means updating both. A skill you don't want to ship doesn't belong in this repo.
