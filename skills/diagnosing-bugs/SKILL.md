@@ -7,6 +7,10 @@ description: Diagnosis loop for hard bugs and performance regressions. Use when 
 
 A discipline for hard bugs. Skip phases only when explicitly justified.
 
+## Worktree
+
+Load the `worktrees` skill and resolve the worktree for this work before writing anything. A new bug gets a `fix/<slug>` worktree; the loop, its scripts and the fix all live there. When Phase 6 is done, release the lock through the `worktrees` skill.
+
 When exploring the codebase, read `GLOSSARY.md` (if it exists) to get a clear mental model of the relevant modules, and check ADRs in the area you're touching.
 
 ## Redact

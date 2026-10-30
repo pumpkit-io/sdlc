@@ -36,6 +36,8 @@ Apply the **deletion test** to anything you suspect is shallow: would deleting i
 
 ### 2. Record candidates, then present them as an HTML report
 
+Load the `worktrees` skill and resolve the worktree for this work before writing anything.
+
 Each candidate gets two renderings: a markdown doc in the repo that an agent can read cold, and an HTML report for the user to look at. Write the doc first; the HTML draws its content from it. Load the `prose-style` skill and write both in that style.
 
 **Use GLOSSARY.md vocabulary for the domain, and the `/codebase-design` vocabulary for the architecture**, in both. If `GLOSSARY.md` defines "Order," talk about "the Order intake module," not "the FooBarHandler," and not "the Order service."
@@ -44,7 +46,7 @@ Each candidate gets two renderings: a markdown doc in the repo that an agent can
 
 #### The candidates doc
 
-Write `docs/architecture-improvements/<scope>-YYYY-MM-DD.md` in the target repo, where `<scope>` is a kebab-case name for the area you scanned (the repo's name for a whole-repo scan). Create the directory if it doesn't exist, and add `docs/architecture-improvements/` to the repo's `.gitignore` unless a line there already covers it.
+Write `docs/architecture-improvements/<scope>-YYYY-MM-DD.md` in the **Main checkout**, not the worktree, where `<scope>` is a kebab-case name for the area you scanned (the repo's name for a whole-repo scan). The `worktrees` skill's `worktree.sh main` prints the main checkout's path. This folder is the one place in the main checkout an agent writes: it is gitignored, so the notes stay where the user reads them, and the main-checkout guard allows it. Create the directory if it doesn't exist. Unless a line in `.gitignore` already covers `docs/architecture-improvements/`, add it to the worktree's `.gitignore` and commit it there.
 
 The doc is a **handoff**: a fresh agent session must be able to pick up any single candidate from its section alone, with neither this session nor the HTML. Plain prose, no diagrams. Structure it as:
 
@@ -90,3 +92,5 @@ Side effects happen inline as decisions crystallize; load the `domain-modeling` 
 - **Sharpening a fuzzy term during the conversation?** Update `GLOSSARY.md` right there.
 - **User rejects the candidate with a load-bearing reason?** Offer an ADR, framed as: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Only offer when the reason would actually be needed by a future explorer to avoid re-suggesting the same thing; skip ephemeral reasons ("not worth it right now") and self-evident ones.
 - **Want to explore alternative interfaces for the deepened module?** Load the `codebase-design` skill and use its design-it-twice pattern.
+
+When the grilling ends, commit what it wrote in the worktree and release the lock through the `worktrees` skill.

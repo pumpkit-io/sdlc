@@ -7,6 +7,8 @@ description: Build a throwaway prototype to answer a design question. Use when t
 
 A prototype is **throwaway code that answers a question**. The question decides the shape.
 
+Load the `worktrees` skill and resolve the worktree for this work before writing anything. Once the prototype is captured (rule 6), release the lock through the `worktrees` skill.
+
 ## Pick a branch
 
 Identify which question is being answered, using the user's prompt, the surrounding code, or by asking if the user is around:
