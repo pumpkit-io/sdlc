@@ -1,55 +1,22 @@
 #!/usr/bin/env bash
-# sdlc git guardrails: PreToolUse hook for the Bash tool.
-# Exit 0 lets the command run. Exit 2 blocks it, and stderr is shown to the agent.
-# Rules check the arguments of each git or gh command, so text in commit messages, PR bodies,
-# heredocs and other chained commands never trips them. Pushes to main are left to each repo's
-# branch protection. Adapted from the git-guardrails-claude-code skill in mattpocock/skills.
-# Requires jq and perl.
+# Rules read each git, gh or portless command's own arguments, so commit messages and heredocs never trip them.
+# Pushes to main are left to branch protection. Adapted from git-guardrails-claude-code in mattpocock/skills.
 
 PUSH_POLICY="allow"   # "allow": pushes allowed, except force and delete. "none": every push blocked.
 
+here="$(cd "$(dirname "$0")" && pwd)"
 input="$(cat)"
 cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)"
 [ -z "$cmd" ] && exit 0
 
 block() {
-  printf 'BLOCKED by sdlc guardrails (%s). Do not retry or work around this: ask the user to run it themselves if it is really needed.\n' "$1" >&2
+  printf 'BLOCKED by sdlc guardrails (%s).' "$1" >&2
+  [ -n "$2" ] && printf ' %s' "$2" >&2
+  printf ' Do not retry or work around this: ask the user to run it themselves if it is really needed.\n' >&2
   exit 2
 }
 
-# Prints one simple command per line. Heredoc bodies are dropped unless a shell reads them,
-# `sh -c` and `eval` arguments become commands of their own, and a quoted string stays only
-# when it is a single word (so `"main"` survives and a commit message doesn't).
-segments() {
-  perl -e '
-    my $s = do { local $/; <STDIN> };
-    my (@out, @pending);
-    for my $line (split /\n/, $s, -1) {
-      if (@pending) {
-        my ($term, $keep) = @{ $pending[0] };
-        if ($line =~ /^\s*\Q$term\E\s*$/) { shift @pending; next }
-        push @out, $line if $keep;
-        next;
-      }
-      push @out, $line;
-      while ($line =~ /(?<!<)<<(?!<)-?\s*([\x27"]?)([A-Za-z_][\w-]*)\1/g) {
-        my $before = substr($line, 0, $-[0]);
-        push @pending, [$2, $before =~ /(?:^|[\s;&|(])(?:ba|z|da)?sh(?:\s+-\S+)*\s*$/ ? 1 : 0];
-      }
-    }
-    $s = join "\n", @out;
-    my @lifted;
-    while ($s =~ /(?:\b(?:ba|z|da)?sh\s+-c|\beval)\s+(\x27[^\x27]*\x27|"(?:[^"\\]|\\.)*")/g) {
-      push @lifted, substr($1, 1, -1);
-    }
-    $s = join "\n", $s, @lifted;
-    $s =~ s{\x27([^\x27]*)\x27|"((?:[^"\\]|\\.)*)"}{
-      my $q = defined $1 ? $1 : $2;
-      $q =~ /^[^\s;&|()<>`\$]*$/ ? $q : " _ ";
-    }ge;
-    for (split /[;&|\n()`]/, $s) { s/^\s+|\s+$//g; print "$_\n" if length }
-  ' <<<"$cmd"
-}
+segments() { perl "$here/split-commands.pl" <<<"$cmd"; }
 
 check_push() {
   [ "$PUSH_POLICY" = "none" ] && block 'git push is disabled'
@@ -109,7 +76,48 @@ check_git() {
       [ "$delete$force" = "11" ] && block 'git branch -D' ;;
     checkout|restore)
       for a in "$@"; do [ "$a" = "." ] && block 'discarding all working-tree changes'; done ;;
+    worktree)
+      [ "$1" = "remove" ] || return 0
+      local why='It discards the uncommitted changes in that worktree. Commit or keep what is there, then remove it without force.'
+      for a in "$@"; do
+        case "$a" in
+          --force) block 'git worktree remove --force' "$why" ;;
+          --*) ;;
+          -*f*) block 'git worktree remove -f' "$why" ;;
+        esac
+      done ;;
   esac
+}
+
+# The subcommand is the first known one, not the first word, so an option's value can't hide it.
+check_portless() {
+  local shared="The proxy and its routes are shared by every worktree's dev stack on this machine. Stop only your own stack, through the repo's dev stack contract (down or destroy)."
+  local sub="" a
+  while [ $# -gt 0 ]; do
+    a="$1"; shift
+    case "$a" in run|proxy|mcp|service|get|alias|list|doctor|trust|clean|prune|hosts) sub="$a"; break ;; esac
+  done
+  case "$sub" in
+    clean) block 'portless clean' "$shared" ;;
+    proxy|hosts|service)
+      for a in "$@"; do
+        case "$sub $a" in
+          'proxy stop'|'hosts clean'|'service uninstall') block "portless $sub $a" "$shared" ;;
+        esac
+      done ;;
+    run)
+      for a in "$@"; do
+        [ "$a" = "--force" ] && block 'portless run --force' "It takes over a route another worktree may own. Start your stack through the repo's dev stack contract, which names the route after this worktree."
+      done ;;
+  esac
+}
+
+# npx, pnpm dlx, yarn dlx, npm exec and the like: the package's arguments follow its name.
+check_launcher() {
+  while [ $# -gt 0 ]; do
+    case "$1" in portless|portless@*) shift; check_portless "$@"; return ;; esac
+    shift
+  done
 }
 
 # Blocks API calls that merge a PR, change branch protection or delete a repository.
@@ -175,6 +183,8 @@ while IFS= read -r seg; do
   case "${w[0]}" in
     git|*/git) check_git "${w[@]:1}" ;;
     gh|*/gh) check_gh "${w[@]:1}" ;;
+    portless|*/portless) check_portless "${w[@]:1}" ;;
+    npx|bunx|pnpx|pnpm|yarn|npm|bun|*/npx|*/pnpm|*/yarn|*/npm|*/bun) check_launcher "${w[@]:1}" ;;
   esac
 done < <(segments)
 exit 0

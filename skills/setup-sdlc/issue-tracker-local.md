@@ -18,6 +18,8 @@ Create a new file under `.scratch/<feature-slug>/` (creating the directory if ne
 
 Read the file at the referenced path. The user will normally pass the path or the issue number directly.
 
+Specs and tickets are committed on their feature branch, so until it merges a fresh session in the main checkout won't find the file there. Look for the same path in each worktree `git worktree list` shows, then on the branches `git log --all --format=%D -- <path>` names (read it with `git show <branch>:<path>`). Its `Branch:` line then leads to the feature worktree.
+
 ## Blocking links
 
 Used by `/to-tickets` to record blocking edges and by `/implement-spec` to find the frontier.

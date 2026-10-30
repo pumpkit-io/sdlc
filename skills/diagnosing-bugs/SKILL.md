@@ -7,6 +7,10 @@ description: Diagnosis loop for hard bugs and performance regressions. Use when 
 
 A discipline for hard bugs. Skip phases only when explicitly justified.
 
+## Worktree
+
+Load the `worktrees` skill and resolve the worktree for this work before writing anything. A new bug gets a `fix/<slug>` worktree; the loop, its scripts and the fix all live there. When Phase 6 is done, release this session's worktree lock, as the `worktrees` skill's Release section says.
+
 When exploring the codebase, read `GLOSSARY.md` (if it exists) to get a clear mental model of the relevant modules, and check ADRs in the area you're touching.
 
 ## Redact
@@ -33,6 +37,8 @@ Spend disproportionate effort here. **Be aggressive. Be creative. Refuse to give
 8. **Bisection harness.** If the bug appeared between two known states (commit, dataset, version), automate "boot at state X, check, repeat" so you can `git bisect run` it.
 9. **Differential loop.** Run the same input through old-version vs new-version (or two configs) and diff outputs.
 10. **HITL bash script.** Last resort. If a human must click, drive _them_ with `scripts/hitl-loop.template.sh` so the loop is still structured. Captured output feeds back to you.
+
+When a loop needs a running server and the repo has a **Dev stack contract** (an executable `scripts/dev-stack`), load the `dev-stack` skill to bring up this worktree's stack and point the loop at its **Dev URL**. Read the server's side of each run with `scripts/dev-stack logs <service>`, redacted as above.
 
 Build the right feedback loop, and the bug is 90% fixed.
 

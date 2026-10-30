@@ -37,14 +37,50 @@ _Avoid_: style guide, design system (when meaning the direction itself)
 **Drift**:
 A contradiction between existing UI and the **Design direction**. It is reported, never resolved by the agent, because only the user knows which side is wrong.
 
+### Worktrees and dev stacks
+
+**Main checkout**:
+A repo's original clone. It belongs to the user, on whatever branch the user has checked out: agents read it but never edit files or commit in it.
+_Avoid_: main worktree, root checkout
+
+**Worktree**:
+A git linked worktree holding one unit of work on its own branch, created from the **Main checkout**. A **Feature worktree** holds a feature branch, which is also the integration branch when `implement-spec` runs; an **Implementer worktree** holds one **Ticket**'s branch while `implement-spec` builds it.
+_Avoid_: workspace, sandbox, checkout (for a linked worktree)
+
+**Slug**:
+The short name that identifies a **Worktree** within its repo and prefixes its **Dev URL**. Two worktrees of one repo never share a slug.
+
+**Worktree lock**:
+The marker saying a session is working in a **Worktree**. A worktree has at most one active session; a lock taken over two hours ago, in a worktree with no file change and no commit for two hours, is stale.
+_Avoid_: claim, lease
+
+**Feature branch link**:
+The line on a **Spec**, copied onto each of its **Tickets**, naming the feature branch the work lives on. It is how a fresh session finds the **Feature worktree** for that work.
+
+**Dev stack**:
+One running copy of a repo's app for one **Worktree**, with its own processes, its own data and its own **Dev URL**, and no effect on the outside world.
+_Avoid_: instance, environment, dev server (when meaning the whole stack)
+
+**Dev URL**:
+The stable address a **Dev stack** answers at, derived from the **Slug** and the project name. It carries no port of its own (at most the one port every stack on the machine shares), and it never changes for a branch.
+_Avoid_: preview URL, localhost link
+
+**Dev stack contract**:
+The fixed set of commands (`up`, `down`, `destroy`, `url`, `status`, `logs`) through which skills start, address and stop a repo's **Dev stack**. The harness fixes the commands; each repo implements them its own way.
+_Avoid_: dev script, launcher
+
 ## Relationships
 
 - An **Issue tracker** holds many **Issues**
 - An **Issue** carries one **Triage role** at a time
 - A **Spec** has many **Tickets**; a **Ticket** belongs to at most one **Spec**
 - A repo has at most one **Design direction**; **Drift** is always measured against it
+- A **Main checkout** has many **Worktrees**; a **Worktree** has one **Slug**, at most one **Dev stack** and at most one active **Worktree lock**
+- A **Dev stack** has one **Dev URL** and is started and stopped only through its repo's **Dev stack contract**
+- A **Spec** has one **Feature branch link**, which leads to one **Feature worktree**; each **Implementer worktree** branches from a **Feature worktree**
 
 ## Flagged ambiguities
 
 - "backlog" was previously used to mean both the *tool* hosting issues and the *body of work* inside it. Resolved: the tool is the **Issue tracker**; "backlog" is no longer used as a domain term.
 - "backlog backend" / "backlog manager". Resolved: collapsed into **Issue tracker**.
+- "instance" for a running copy of the app. Resolved: the term is **Dev stack**, because adopting repos already use "instance" for their own things (PumpKit's **Instance** is a self-hosted deployment).

@@ -107,6 +107,7 @@ When the spec or brief carries a design plan, build to it, and change it only fo
 - **Responsive.** Read [RESPONSIVE.md](RESPONSIVE.md) when building or editing a layout.
 - **Accessible.** Read [ACCESSIBILITY.md](ACCESSIBILITY.md) when the work touches interactive UI or colour. It holds the contrast checker: compute every ratio, never judge one by eye.
 - **Verified.** Run or build it, check the console, and click every control. When it can't be run, say so and check each control by reading the code.
+- **Seen at the Dev URL.** When the repo has a **Dev stack contract** (an executable `scripts/dev-stack`), load the `dev-stack` skill, open the change at its **Dev URL**, and take a screenshot at each width [RESPONSIVE.md](RESPONSIVE.md) names: the narrowest target, the 600 to 1024 px middle band, and desktop.
 
 ### Reviewing and cleaning UI
 

@@ -21,6 +21,10 @@ Every comment or issue posted to the issue tracker during triage **must** start 
 - [AGENT-BRIEF.md](AGENT-BRIEF.md): how to write durable agent briefs
 - [OUT-OF-SCOPE.md](OUT-OF-SCOPE.md): how the `.out-of-scope/` knowledge base works
 
+## Worktree
+
+Triage writes repo files in two places: grilling (`GLOSSARY.md`, ADRs) and a rejected enhancement's `.out-of-scope/` entry. Reading the tracker, labelling and commenting need no worktree. Load the `worktrees` skill and resolve the worktree for this work before writing anything. Commit the files there, and when the triage of that issue or PR is done, release this session's worktree lock, as the `worktrees` skill's Release section says.
+
 ## Roles
 
 Two **category** roles:
@@ -71,7 +75,7 @@ Show counts and a one-line summary per item. Let the maintainer pick.
 
 2. **Recommend.** Tell the maintainer your category and state recommendation with reasoning, plus a brief codebase summary relevant to the request (including whether it's already implemented). Wait for direction.
 
-3. **Verify the claim.** Before any grilling, check that the claim holds up. For a bug, reproduce it from the reporter's steps. For a PR, confirm the diff does what it claims: check it out, run the relevant tests or commands. Report what happened: confirmed (with code path), failed, or insufficient detail (a strong `needs-info` signal). A confirmed verification makes a much stronger agent brief.
+3. **Verify the claim.** Before any grilling, check that the claim holds up. For a bug, reproduce it from the reporter's steps. For a PR, confirm the diff does what it claims: fetch its head into a local branch named `triage/pr-<number>` (the tracker config says how), open it with the `worktrees` skill's create, and run the relevant tests or commands there. Once verified, finish that worktree through the `worktrees` skill; the PR is open, so its finish takes `--pr-open`. Report what happened: confirmed (with code path), failed, or insufficient detail (a strong `needs-info` signal). A confirmed verification makes a much stronger agent brief.
 
 4. **Grill (if needed).** If the request needs fleshing out, load the `grilling` and `domain-modeling` skills, and grill it into shape a round of questions at a time, sharpening domain terms and updating `GLOSSARY.md`/ADRs inline as decisions land.
 
