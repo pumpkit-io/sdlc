@@ -77,6 +77,20 @@ check "copies nested files" "X=1" "$(cat "$bpath/apps/web/.env.local")"
 check "runs install" "yes" "$([ -f "$bpath/installed" ] && echo yes)"
 check "no gitignore commit when covered" "doc" "$(git -C "$bpath" log -1 --format=%s)"
 
+retry="$(new_repo retry)"
+mkdir -p "$retry/docs/agents"
+printf '# Worktrees\n\n## Install\n\n```sh\n[ -f "%s/allow-install" ] && touch installed\n```\n' "$scratch" > "$retry/docs/agents/worktrees.md"
+git -C "$retry" add -A && git -C "$retry" commit -q -m doc && git -C "$retry" push -q origin main
+out="$(cd "$retry" && wt create feat/retry 2>&1)"; code=$?
+check "failed install refuses" "1" "$code"
+touch "$scratch/allow-install"
+rpath="$(cd "$retry" && wt create feat/retry 2>/dev/null | tail -n 1)"
+check "create after a failed install reruns it" "yes" "$([ -f "$rpath/installed" ] && echo yes)"
+check "and commits the gitignore" "chore: ignore worktrees and session locks" "$(git -C "$rpath" log -1 --format=%s)"
+rm -f "$rpath/installed"
+(cd "$retry" && wt create feat/retry >/dev/null 2>&1)
+check "a bootstrapped worktree is not bootstrapped again" "no" "$([ -f "$rpath/installed" ] && echo yes || echo no)"
+
 echo "# lock"
 check "take" "0" "$(wt lock "$path" "session A" >/dev/null 2>&1; echo $?)"
 check "same holder retakes" "0" "$(wt lock "$path" "session A" >/dev/null 2>&1; echo $?)"
@@ -88,9 +102,17 @@ out="$(wt lock "$path" "session B" 2>&1)"; code=$?
 check "stale" "4" "$code"
 contains "stale names the holder" "old session" "$out"
 check "take over" "0" "$(wt lock --take-over "$path" "session B" >/dev/null 2>&1; echo $?)"
-check "holder after take over" "session B" "$(sed -n 2p "$path/.sdlc/lock")"
+check "holder after take over" "session B" "$(cd "$repo" && wt list | awk -F '\t' '$1 == "login-flow-v2" { print $5 }')"
 check "release" "no" "$(wt release "$path"; [ -e "$path/.sdlc/lock" ] && echo yes || echo no)"
 check "lock in main checkout refused" "1" "$(wt lock "$repo" "x" >/dev/null 2>&1; echo $?)"
+: > "$path/.sdlc/lock"
+check "empty lock file is busy" "3" "$(wt lock "$path" "session F" >/dev/null 2>&1; echo $?)"
+check "empty lock file kept" "" "$(cat "$path/.sdlc/lock")"
+wt release "$path"
+for i in 1 2 3 4 5 6 7 8; do (wt lock "$path" "racer $i" >/dev/null 2>&1; echo $? > "$scratch/race-$i") & done
+wait
+check "one of eight parallel takers wins" "1" "$(cat "$scratch"/race-* | grep -c '^0$')"
+wt release "$path"
 
 echo "# list"
 wt lock "$nested" "session C" >/dev/null 2>&1

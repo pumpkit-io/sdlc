@@ -51,7 +51,7 @@ _Avoid_: workspace, sandbox, checkout (for a linked worktree)
 The short name that identifies a **Worktree** within its repo and prefixes its **Dev URL**. Two worktrees of one repo never share a slug.
 
 **Worktree lock**:
-The marker saying a session is working in a **Worktree**. A worktree has at most one active session; a lock with no file change and no commit for two hours is stale.
+The marker saying a session is working in a **Worktree**. A worktree has at most one active session; a lock taken over two hours ago, in a worktree with no file change and no commit for two hours, is stale.
 _Avoid_: claim, lease
 
 **Feature branch link**:

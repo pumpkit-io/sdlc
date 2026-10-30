@@ -63,11 +63,22 @@ linked_worktrees() {
     END { if (n > 1 && path != "") print path "\t" branch }'
 }
 
+# When the lock was taken: its first line, or the file's mtime when a half-written or hand-edited lock lacks one.
+lock_taken() {
+  local taken
+  taken="$(sed -n 1p "$1/.sdlc/lock" 2>/dev/null)"
+  case "$taken" in
+    ''|*[!0-9]*) stat -f %m "$1/.sdlc/lock" 2>/dev/null || stat -c %Y "$1/.sdlc/lock" 2>/dev/null || date +%s ;;
+    *) printf '%s\n' "$taken" ;;
+  esac
+}
+
+# Fresh while any of the lock, the last commit or a file change is under two hours old.
 lock_state() {
   local wt="$1" now taken last_commit
   [ -f "$wt/.sdlc/lock" ] || { echo free; return; }
   now="$(date +%s)"
-  taken="$(sed -n 1p "$wt/.sdlc/lock")"
+  taken="$(lock_taken "$wt")"
   last_commit="$(git -C "$wt" log -1 --format=%ct 2>/dev/null || echo 0)"
   if [ $(( (now - taken) / 60 )) -lt "$stale_minutes" ] || [ $(( (now - last_commit) / 60 )) -lt "$stale_minutes" ] ||
      [ -n "$(find "$wt" \( -path "$wt/.git" -o -path "$wt/.sdlc" \) -prune -o -mmin "-$stale_minutes" -print 2>/dev/null | head -n 1)" ]; then
@@ -78,7 +89,11 @@ lock_state() {
 }
 
 lock_holder() { sed -n 2p "$1/.sdlc/lock"; }
-lock_age() { echo "$(( ($(date +%s) - $(sed -n 1p "$1/.sdlc/lock")) / 60 ))m"; }
+lock_age() { echo "$(( ($(date +%s) - $(lock_taken "$1")) / 60 ))m"; }
+
+# Present from worktree add until bootstrap succeeds, so a rerun of create retries it.
+# It lives in the worktree's git dir, out of the working tree and its status.
+bootstrap_marker() { printf '%s/sdlc-bootstrap-pending\n' "$(git -C "$1" rev-parse --absolute-git-dir)"; }
 
 bootstrap() {
   local main="$1" wt="$2" doc="$2/$doc_path" file install
@@ -105,8 +120,10 @@ bootstrap() {
   if [ -n "$missing" ]; then
     [ -s "$wt/.gitignore" ] && [ -n "$(tail -c 1 "$wt/.gitignore")" ] && echo >> "$wt/.gitignore"
     printf '%s' "$missing" >> "$wt/.gitignore"
-    git -C "$wt" add .gitignore && git -C "$wt" commit -q -m "$gitignore_message" .gitignore && say "Committed the missing .gitignore entries."
+    git -C "$wt" add .gitignore && git -C "$wt" commit -q -m "$gitignore_message" .gitignore && say "Committed the missing .gitignore entries." ||
+      die "Could not commit the .gitignore entries in $wt."
   fi
+  rm -f "$(bootstrap_marker "$wt")"
 }
 
 cmd_create() {
@@ -124,6 +141,10 @@ cmd_create() {
     [ -n "$other_path" ] || continue
     if [ "$other_branch" = "$branch" ]; then
       say "Worktree for $branch already exists."
+      if [ -f "$(bootstrap_marker "$other_path")" ]; then
+        say "Its bootstrap did not finish; running it again."
+        bootstrap "$main" "$other_path"
+      fi
       printf '%s\n' "$other_path"
       return 0
     fi
@@ -145,6 +166,7 @@ cmd_create() {
     git -C "$main" worktree add -q --no-track -b "$branch" "$path" "$base" || die "git worktree add failed."
   fi
   say "Created $path on $branch."
+  touch "$(bootstrap_marker "$path")"
   bootstrap "$main" "$path"
   printf '%s\n' "$path"
 }
@@ -157,14 +179,19 @@ cmd_lock() {
   wt="$(cd "$1" 2>/dev/null && pwd -P)" || die "$1 does not exist."
   main="$(cd "$wt" && main_checkout)"
   [ "$wt" = "$main" ] && die "$wt is the main checkout: lock a worktree instead."
-  if [ -z "$take_over" ] && [ -f "$wt/.sdlc/lock" ] && [ "$(lock_holder "$wt")" != "$description" ]; then
+  local lock="$wt/.sdlc/lock"
+  mkdir -p "$wt/.sdlc"
+  # noclobber makes taking a free lock atomic: of two sessions racing, one write fails.
+  if [ -z "$take_over" ] && (set -C; printf '%s\n%s\n' "$(date +%s)" "$description" > "$lock") 2>/dev/null; then
+    return 0
+  fi
+  if [ -z "$take_over" ] && [ "$(lock_holder "$wt")" != "$description" ]; then
     case "$(lock_state "$wt")" in
-      fresh) say "Busy: locked by $(lock_holder "$wt"), $(lock_age "$wt") ago."; exit 3 ;;
-      stale) say "Stale: locked by $(lock_holder "$wt"), $(lock_age "$wt") ago, with no file change or commit for two hours."; exit 4 ;;
+      stale) say "Stale: locked by $(lock_holder "$wt"), $(lock_age "$wt") ago, with no file change or commit in the last two hours."; exit 4 ;;
+      *) say "Busy: locked by $(lock_holder "$wt"), $(lock_age "$wt") ago."; exit 3 ;;
     esac
   fi
-  mkdir -p "$wt/.sdlc"
-  printf '%s\n%s\n' "$(date +%s)" "$description" > "$wt/.sdlc/lock"
+  printf '%s\n%s\n' "$(date +%s)" "$description" > "$lock.$$" && mv -f "$lock.$$" "$lock"
 }
 
 cmd_release() {

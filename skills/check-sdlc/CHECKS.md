@@ -77,7 +77,7 @@ All three skip when `origin` is not on GitHub.
 | `worktrees.bootstrap` | The files to copy exist | script | Every path under the doc's Copy exists in the main checkout | Remove the stale bullet from Copy; or the user creates the file in the main checkout | approval | F |
 | `worktrees.missing-dirs` | No worktree registered without its folder | script | `git worktree list --porcelain` shows nothing `prunable` | `git -C <main> worktree prune` | automatic | none |
 | `worktrees.merged` | No leftover merged worktrees | script | No unlocked worktree has zero commits ahead of `origin/<default>`, as of the last fetch | `bash <wt> sweep`, which fetches first and leaves anything dirty, locked or unmerged | approval | none |
-| `worktrees.stale-locks` | No abandoned locks | script | No lock is stale (two hours with no file change and no commit) | `bash <wt> release <path>` for each lock the user confirms no session holds | approval | none |
+| `worktrees.stale-locks` | No abandoned locks | script | No lock is stale (taken over two hours ago, with no file change and no commit for two hours) | `bash <wt> release <path>` for each lock the user confirms no session holds | approval | none |
 | `worktrees.main-clean` | The main checkout holds no agent changes | script | `git -C <main> status --porcelain` is empty outside the worktrees folder and `.sdlc/` | Review with `git -C <main> status`, then commit, move or discard the changes yourself | user-only | none |
 
 ## Portless and the proxy
