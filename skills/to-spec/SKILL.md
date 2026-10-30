@@ -8,6 +8,8 @@ This skill takes the current conversation context and codebase understanding and
 
 The issue tracker should have been provided to you. If not, tell the user to run `/setup-sdlc`.
 
+Load the `worktrees` skill and resolve the worktree for this work before writing anything.
+
 ## Process
 
 1. Explore the repo to understand the current state of the codebase, if you haven't already. Use the project's domain glossary vocabulary throughout the spec, and respect any ADRs in the area you're touching.
@@ -16,9 +18,11 @@ The issue tracker should have been provided to you. If not, tell the user to run
 
 3. When the feature has a UI, load the `ui-design` skill. Take the design plan settled in the conversation; when there is none, make one now, planning only, with its open choices recorded as open questions.
 
-4. Load the `prose-style` skill. Write the spec in that style using the template below, then publish it to the project issue tracker. Apply the `ready-for-agent` triage label - no need for additional triage.
+4. Load the `prose-style` skill. Write the spec in that style using the template below, then publish it to the project issue tracker. The body starts with the **Feature branch link**, `Branch: <branch>`, naming the branch this session's worktree is on (`git branch --show-current` there). Apply the `ready-for-agent` triage label - no need for additional triage.
 
 <spec-template>
+
+Branch: <feature branch>
 
 ## Problem Statement
 
@@ -86,4 +90,4 @@ Any further notes about the feature.
 
 ## Finishing
 
-Fold every loose end left in the conversation into the spec (Out of Scope or Further Notes), or into a spec of its own when it is separate work. A question the conversation left open goes under Further Notes as an open question. The spec issues are this skill's only output. Close by listing each published spec issue with its link, then naming the next step: `to-tickets`.
+Fold every loose end left in the conversation into the spec (Out of Scope or Further Notes), or into a spec of its own when it is separate work. A question the conversation left open goes under Further Notes as an open question. The spec issues are this skill's only output. Close by listing each published spec issue with its link, then naming the next step: `to-tickets`. Last, release this session's worktree lock, as the `worktrees` skill's Release section says.
