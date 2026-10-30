@@ -114,5 +114,5 @@ Both skip without `docs/agents/dev-stack.md`.
 
 | id | What | How | Pass when | Fix | Kind | Section |
 |---|---|---|---|---|---|---|
-| `stacks.cap` | Running stacks stay under the cap | script | This repo's running stacks (from `bash <wt> list` and the main checkout's `status`) are at most the doc's cap | `(cd <worktree> && scripts/dev-stack down)` for the stacks the user picks | user-only | none |
+| `stacks.cap` | Running stacks stay under the cap | script | The stacks running on this machine, from every repo, are at most the doc's cap. Each route in Portless's `routes.json` is one stack; routes sharing a first and last label (a stack's extra services) count once | `(cd <worktree> && scripts/dev-stack down)` for the stacks the user picks | user-only | none |
 | `stacks.merged` | No stack left in a merged worktree | script | No worktree with zero commits ahead of `origin/<default>` has a running stack | `bash <wt> finish <path>`, which destroys the stack first | approval | none |
