@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# sdlc git guardrails: PreToolUse hook for the Bash tool.
+# sdlc git and Portless guardrails: PreToolUse hook for the Bash tool.
 # Exit 0 lets the command run. Exit 2 blocks it, and stderr is shown to the agent.
-# Rules check the arguments of each git or gh command, so text in commit messages, PR bodies,
+# Rules check the arguments of each git, gh or portless command, so text in commit messages, PR bodies,
 # heredocs and other chained commands never trips them. Pushes to main are left to each repo's
 # branch protection. Adapted from the git-guardrails-claude-code skill in mattpocock/skills.
 # Requires jq and perl.
@@ -12,8 +12,11 @@ input="$(cat)"
 cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)"
 [ -z "$cmd" ] && exit 0
 
+# block <what> [<why, and what to do instead>]
 block() {
-  printf 'BLOCKED by sdlc guardrails (%s). Do not retry or work around this: ask the user to run it themselves if it is really needed.\n' "$1" >&2
+  printf 'BLOCKED by sdlc guardrails (%s).' "$1" >&2
+  [ -n "$2" ] && printf ' %s' "$2" >&2
+  printf ' Do not retry or work around this: ask the user to run it themselves if it is really needed.\n' >&2
   exit 2
 }
 
@@ -109,6 +112,32 @@ check_git() {
       [ "$delete$force" = "11" ] && block 'git branch -D' ;;
     checkout|restore)
       for a in "$@"; do [ "$a" = "." ] && block 'discarding all working-tree changes'; done ;;
+    worktree)
+      [ "$1" = "remove" ] || return 0
+      local why='It discards the uncommitted changes in that worktree. Commit or keep what is there, then remove it without force.'
+      for a in "$@"; do
+        case "$a" in
+          --force) block 'git worktree remove --force' "$why" ;;
+          --*) ;;
+          -*f*) block 'git worktree remove -f' "$why" ;;
+        esac
+      done ;;
+  esac
+}
+
+check_portless() {
+  while [ $# -gt 0 ] && [ "${1#-}" != "$1" ]; do shift; done
+  local shared="The proxy and its routes are shared by every worktree's dev stack on this machine. Stop only your own stack, through the repo's dev stack contract (down or destroy)."
+  case "$1 $2" in
+    'proxy stop') block 'portless proxy stop' "$shared" ;;
+    'clean '*) block 'portless clean' "$shared" ;;
+    'hosts clean') block 'portless hosts clean' "$shared" ;;
+    'service uninstall') block 'portless service uninstall' "$shared" ;;
+    'run '*)
+      local a
+      for a in "$@"; do
+        [ "$a" = "--force" ] && block 'portless run --force' "It takes over a route another worktree may own. Start your stack through the repo's dev stack contract, which names the route after this worktree."
+      done ;;
   esac
 }
 
@@ -175,6 +204,8 @@ while IFS= read -r seg; do
   case "${w[0]}" in
     git|*/git) check_git "${w[@]:1}" ;;
     gh|*/gh) check_gh "${w[@]:1}" ;;
+    portless|*/portless) check_portless "${w[@]:1}" ;;
+    npx|bunx) case "${w[1]}" in portless|portless@*) check_portless "${w[@]:2}" ;; esac ;;
   esac
 done < <(segments)
 exit 0
