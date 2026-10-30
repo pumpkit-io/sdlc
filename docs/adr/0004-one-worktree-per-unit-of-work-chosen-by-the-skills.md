@@ -18,5 +18,5 @@ The rules that hang off this:
 - **Worktrees in a sibling directory** (`../repo.worktrees/`). Rejected: agents reset the shell directory and ask permission for edits outside the project, so a session can't move there mid-task.
 - **A harness-only `.worktrees/` folder.** More neutral for other agents, but Claude Code can only switch a session from one worktree into another when both are under `.claude/worktrees/`.
 - **The user starts each session in a worktree** (`claude -w`). Rejected: it is a habit, not a default, and forgetting it once writes to the main checkout. It still works: the skills find themselves in a worktree and stay.
-- **A ticket worktree off a busy feature branch**, merged back by the user. Rejected: it leaves the user a merge that `implement-spec` already does properly.
+- **A ticket worktree off a busy feature branch**, merged back by the user. Rejected: it leaves the user a merge that `implement-spec` already does.
 - **Warn instead of blocking in the main checkout.** Rejected: blocking is what makes the rule hold in sessions where no skill ran.

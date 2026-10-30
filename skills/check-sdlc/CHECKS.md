@@ -24,7 +24,7 @@ Each row gives the fix and its kind:
 | `agent.jq` | `jq` for the hooks | script | `jq` is on `PATH` | `brew install jq` on macOS; `sudo apt-get install jq` on Debian and Ubuntu | approval (user-only when it needs `sudo`) | none |
 | `agent.perl` | `perl` for the hooks | script | `perl` is on `PATH` | `brew install perl`; `sudo apt-get install perl` | approval (user-only when it needs `sudo`) | none |
 | `agent.skills-once` | Each sdlc skill is installed once | judgment | Your list of available skills names each sdlc skill once; in Claude Code, not both as `sdlc:<name>` and `<name>` | Remove one install, as the README's Install section says: `claude plugin uninstall sdlc@pumpkit-io`, or delete the `npx` copy from `.claude/skills/` or `.agents/skills/` | user-only | none |
-| `agent.hooks` | The guardrail, guard and slop hooks run | judgment | Claude Code only: `claude plugin list` shows `sdlc` enabled. Skip in other agents, which have no hooks. | `claude plugin enable sdlc@pumpkit-io`, then `/reload-plugins` | user-only | none |
+| `agent.hooks` | The guardrail, guard and slop hooks run | judgment | Claude Code only: `claude plugin list` shows `sdlc` enabled. Skip in other agents, which have no hooks. | In Claude Code: `claude plugin enable sdlc@pumpkit-io`, then `/reload-plugins` | user-only | none |
 
 ## Repo instructions
 

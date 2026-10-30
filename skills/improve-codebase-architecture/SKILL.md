@@ -46,7 +46,7 @@ Each candidate gets two renderings: a markdown doc in the repo that an agent can
 
 #### The candidates doc
 
-Write `docs/architecture-improvements/<scope>-YYYY-MM-DD.md` in the **Main checkout**, not the worktree, where `<scope>` is a kebab-case name for the area you scanned (the repo's name for a whole-repo scan). The `worktrees` skill's `worktree.sh main` prints the main checkout's path. This folder is the one place in the main checkout an agent writes: it is gitignored, so the notes stay where the user reads them, and the main-checkout guard allows it. Create the directory if it doesn't exist. Unless a line in `.gitignore` already covers `docs/architecture-improvements/`, add it to the worktree's `.gitignore` and commit it there.
+Write `docs/architecture-improvements/<scope>-YYYY-MM-DD.md` in the **Main checkout**, not the worktree, where `<scope>` is a kebab-case name for the area you scanned (the repo's name for a whole-repo scan). The `worktrees` skill's `worktree.sh main` prints the main checkout's path. Besides `.sdlc/`, which holds session state, this folder is the one place in the main checkout an agent writes: it is gitignored, so the notes stay where the user reads them, and the main-checkout guard allows it. Create the directory if it doesn't exist. Unless a line in `.gitignore` already covers `docs/architecture-improvements/`, add it to the worktree's `.gitignore` and commit it there.
 
 The doc is a **handoff**: a fresh agent session must be able to pick up any single candidate from its section alone, with neither this session nor the HTML. Plain prose, no diagrams. Structure it as:
 
