@@ -4,6 +4,8 @@ description: "Implement a piece of work from a spec, tickets, or what this sessi
 disable-model-invocation: true
 ---
 
+Load the `worktrees` skill and resolve the worktree for this work before writing anything. A Ticket or Spec leads to its **Feature worktree** through its Feature branch link, work this session settled stays in the worktree the session already worked in, and a raw idea gets a new worktree. When the feature worktree's lock is busy, stop there with the lock holder's name and the suggestion to run `implement-spec`, the same way in an unattended run.
+
 Implement the work from its source:
 
 - **Spec or tickets**: the ones the user names. If commits have landed in their area since they were written, suggest running `refresh-spec` on them first.
@@ -17,4 +19,4 @@ Run typechecking regularly, single test files regularly, and the full test suite
 
 Once done, load the `review-changes` skill to review the work. When you worked from the conversation, hand it the brief as the spec.
 
-Commit your work to the current branch.
+Commit your work to the worktree's branch. Close by naming the worktree path and branch, then release this session's worktree lock, as the `worktrees` skill's Release section says.

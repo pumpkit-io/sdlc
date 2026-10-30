@@ -56,6 +56,8 @@ For one worktree the user names, or one this session's work is done in:
 2. Run `worktree.sh finish <path>`. It refuses on uncommitted changes (exit 1, listing them), on a lock (exit 3, naming the holder), and on a branch that is neither merged into `origin/<default>` nor pushed (exit 5). Show the user what it listed; a lock held by another session stays.
 3. On exit 5, ask the user whether an open PR covers the branch. Only on a clear yes, run `worktree.sh finish <path> --pr-open`.
 
+A worktree whose branch was merged into a branch other than the default, such as an **Implementer worktree** merged into the integration branch, finishes with `worktree.sh finish <path> --merged-into <branch>`: the same refusals, with that branch in place of `origin/<default>`.
+
 Once it passes, the script runs `scripts/dev-stack destroy` when the repo has a contract, removes the worktree, deletes the branch with `git branch -d` and prunes. Neither step forces: a branch `git branch -d` refuses is kept and reported.
 
 ## Sweep
