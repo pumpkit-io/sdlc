@@ -15,7 +15,11 @@ To leave a worktree, switch the session back to the main checkout, keeping the w
 
 ## Resolve
 
-The entry point. Every writing skill opens with the step "Load the `worktrees` skill and resolve the worktree for this work before writing anything.", which means this section. Given a **Spec**, a **Ticket**, an idea or nothing, end with the session in one worktree holding its lock, in this order:
+The entry point. A writing skill opens with this sentence, and it means this section:
+
+> Load the `worktrees` skill and resolve the worktree for this work before writing anything.
+
+Given a **Spec**, a **Ticket**, an idea or nothing, end with the session in one worktree holding its lock, in this order:
 
 1. **Already in a fitting worktree.** When the session is in a linked worktree (its top level differs from `worktree.sh main`) and its branch is the one the work's **Feature branch link** names, or this session already worked there on the same work, stay. This covers a session the agent started in a worktree (in Claude Code, `claude -w`) and a grilling session moving on to `to-spec` or `implement`. Go to step 4.
 2. **A Spec or Ticket.** Read its Feature branch link: the line `Branch: <branch>` at the top of the body. A Ticket without one follows its parent Spec's link. With a link, run `worktree.sh create <branch>`: it reuses the branch's worktree, or adds one for a branch that exists locally or on `origin`. A Spec with no link (one written before links existed) gets a new `feat/<slug>` branch as in step 3, and then you write `Branch: <branch>` as the first line of the Spec's body through the issue tracker (`docs/agents/issue-tracker.md`). A Ticket with no Spec is an idea.
@@ -42,7 +46,11 @@ Resolve without the "stay" step: `worktree.sh create <branch> [<base>]`, then lo
 
 ## Release
 
-Every writing skill closes with the step "Release this session's worktree lock, as the `worktrees` skill's Release section says.": run `worktree.sh release <path>`. It deletes the lock and nothing else.
+A writing skill closes with this sentence, and it means this section:
+
+> Release this session's worktree lock, as the `worktrees` skill's Release section says.
+
+Run `worktree.sh release <path>`. It deletes the lock and nothing else.
 
 ## List
 
