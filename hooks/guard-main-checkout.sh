@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
-# sdlc main-checkout guard: PreToolUse hook for the file tools and Bash (ADR 0004).
-# In a repo whose AGENTS.md or CLAUDE.md has the `### Worktrees` rule, it blocks file edits and the git
-# commands that change the checkout in the Main checkout. Exit 0 lets the call run. Exit 2 blocks it,
-# and stderr is shown to the agent. SDLC_ALLOW_MAIN_CHECKOUT=1 in the session's environment turns it off.
-# Shell redirections into the checkout are not caught: the AGENTS.md rule covers those. Requires jq and perl.
+# Blocks file edits and checkout-changing git commands in a Main checkout with the `### Worktrees` rule (ADR 0004).
+# Shell redirections into the checkout are not caught: the AGENTS.md rule covers those.
 
 [ "${SDLC_ALLOW_MAIN_CHECKOUT:-}" = 1 ] && exit 0
 
@@ -18,7 +15,7 @@ block() {
   exit 2
 }
 
-# resolve <path> <base>: the absolute physical path, with symlinks resolved in the part that exists.
+# Symlinks resolve only in the part of the path that exists.
 resolve() {
   perl -MCwd=abs_path -e '
     my ($p, $base) = @ARGV;
@@ -65,12 +62,15 @@ check_file() {
   done
 }
 
-# changes_checkout <subcommand> <args...>: whether that git command changes the checkout it runs in.
+# Whether the git subcommand changes the files, index or HEAD of the checkout it runs in.
 changes_checkout() {
   local sub="$1" a
   shift
   case "$sub" in
-    commit|add|switch|rebase|cherry-pick|revert|am) return 0 ;;
+    commit|add|rm|mv|restore|reset|switch|rebase|cherry-pick|revert|am) return 0 ;;
+    clean)
+      for a in "$@"; do case "$a" in --dry-run) return 1 ;; --*) ;; -*n*) return 1 ;; esac; done
+      return 0 ;;
     checkout) [ $# -gt 0 ] ;;
     merge|pull)
       for a in "$@"; do [ "$a" = --ff-only ] && return 1; done
@@ -83,7 +83,6 @@ changes_checkout() {
   esac
 }
 
-# check_git <dir> <git arguments...>
 check_git() {
   local dir="$1" main
   shift

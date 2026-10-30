@@ -1,8 +1,6 @@
 #!/usr/bin/env perl
-# Reads a shell command line on stdin and prints one simple command per line, in order, for the hooks.
-# Heredoc bodies are dropped unless a shell reads them, `sh -c` and `eval` arguments become commands of
-# their own, and a quoted string stays only when it is a single word (so `"main"` survives and a commit
-# message doesn't).
+# Prints each simple command of the shell line on stdin on its own line, with `sh -c` and `eval` bodies lifted out.
+# Heredoc bodies go unless a shell reads them; a quoted string stays only as one word, so commit messages drop out.
 use strict;
 use warnings;
 
