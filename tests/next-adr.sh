@@ -55,6 +55,15 @@ add_adr "$scratch/origin-other" docs/adr/0003-x.md
 git -C "$scratch/origin-other" push -q origin main
 check "after the highest on origin/main" "0004" "$(cd "$repo" && next)"
 
+echo "# from a subdirectory"
+repo="$(new_repo subdir)"
+add_adr "$repo" docs/adr/0004-x.md
+git -C "$repo" push -q origin main
+git -C "$repo" checkout -q -b feat/sub
+git -C "$repo" rm -q docs/adr/0004-x.md && git -C "$repo" commit -q -m drop
+mkdir -p "$repo/src/app"
+check "committed ADRs found from a subdirectory" "0005" "$(cd "$repo/src/app" && next)"
+
 echo "# local branch"
 repo="$(new_repo branch)"
 git -C "$repo" checkout -q -b feat/other
