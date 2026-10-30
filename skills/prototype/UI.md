@@ -94,7 +94,7 @@ Put the switcher in a single shared component so both sub-shapes can reuse it. L
 
 ### 5. Hand it over
 
-Surface the URL (and the `?variant=` keys). The user will flip through whenever they get to it. The interesting feedback is usually **"I want the header from B with the sidebar from C"**, which is the actual design they want.
+Surface the URL (and the `?variant=` keys). When the repo has a **Dev stack contract** (an executable `scripts/dev-stack`), load the `dev-stack` skill to bring up this worktree's stack, leave it running, and hand the variants over as `<Dev URL>/<route>?variant=A|B|C`. The user will flip through whenever they get to it. The interesting feedback is usually **"I want the header from B with the sidebar from C"**, which is the actual design they want.
 
 ### 6. Capture the answer and clean up
 

@@ -15,8 +15,12 @@ Use /tdd where possible, at the seams the spec or brief agreed.
 
 Load the `code-comments` skill before writing code; every comment you write follows it. When the work builds UI, load the `ui-design` skill and build to the spec's UI Design section, or to the design plan the session settled.
 
-Run typechecking regularly, single test files regularly, and the full test suite once at the end.
+Run typechecking regularly, single test files regularly, and the full test suite once at the end. Unit and integration tests run on their own, with no **Dev stack**.
+
+Once the full suite passes, run the dev stack step when the repo has a **Dev stack contract** (an executable `scripts/dev-stack`) and the change is reachable over HTTP or UI: load the `dev-stack` skill, bring up this worktree's stack, verify the change at its **Dev URL**, and leave it running. Any other change goes straight to review.
 
 Once done, load the `review-changes` skill to review the work. When you worked from the conversation, hand it the brief as the spec.
+
+When the dev stack step ran, the closing report ends with the `dev-stack` skill's `Dev URL:` and `Checked there:` lines.
 
 Commit your work to the worktree's branch. Close by naming the worktree path and branch, then release this session's worktree lock, as the `worktrees` skill's Release section says.
