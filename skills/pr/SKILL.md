@@ -1,6 +1,6 @@
 ---
 name: pr
-description: "Use when writing a PR body."
+description: "Use when opening a PR or writing a PR body."
 metadata:
   credits:
     skill: show-me
@@ -170,3 +170,15 @@ Execution-based evidence is A-tier. Test results, console output. Show the exact
 Describe whether it's a one-way or two-way door. You can walk back through two-way doors, but not one-way doors. A PR that is cheap to roll back is lower risk. Changes that involve destructive actions or hard-to-reverse decisions are one-way doors.
 
 The blast radius is the potential impact or scope of the changes introduced by this PR. Consider all possibilities. Examples are layout shift, breakages for consumers, mobile responsiveness, etc.
+
+## Opening the PR
+
+When a skill or the user asks you to open a PR for the current branch:
+
+1. Check that a PR can open: `origin` is on GitHub or GitLab, and its CLI (`gh` or `glab`) is installed and logged in. If not, push nothing, open nothing, and say why in one line.
+2. Push the branch: `git push -u origin <branch>`.
+3. If the branch already has an open PR (`gh pr view`, `glab mr view`), the push updated it. Comment on it with what the push added, and go to step 5.
+4. Open it ready for review, not as a draft: `gh pr create` or `glab mr create`. Title it the way the repo titles its commits and write the body from the template above, ending with a `Closes #<n>` line for each issue the caller names.
+5. Carry out any step the repo's agent instructions (`AGENTS.md`, `CLAUDE.md`) say follows a push to a PR.
+
+Report the PR link.

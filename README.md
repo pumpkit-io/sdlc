@@ -95,10 +95,12 @@ to-tickets                  vertical-slice tickets with blocking links, each wit
 (fresh session, in the main checkout again)
 implement <ticket>          follows the Branch line into the feature's worktree;
                             in a repo with an app, ends with the change running
-                            at its Dev URL
-  or implement-spec <spec>  all tickets in parallel worktrees, unattended
-review-changes main         final three-axis review of the whole branch
-"open a PR"                 body shaped by the pr skill
+                            at its Dev URL; once tests and review pass, pushes
+                            and opens a PR
+  or implement-spec <spec>  all tickets in parallel worktrees, unattended, then
+                            one push and one PR for the whole spec
+"open a PR"                 when implement stopped on a blocker you resolved;
+                            the pr skill pushes, opens it and shapes the body
 (after merging)
 worktrees sweep             removes every clean worktree whose branch is merged
 ```
