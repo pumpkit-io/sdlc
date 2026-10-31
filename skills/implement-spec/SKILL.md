@@ -11,7 +11,7 @@ You have been provided a spec. This spec should have tickets associated with it,
 
 The issue tracker should have been provided to you. If not, tell the user to run `/setup-sdlc`.
 
-The goal is the entire spec implemented on a single **integration branch**, pushed once at the end in a PR that closes the spec and every ticket.
+The goal is the entire spec implemented on a single **integration branch**, pushed once at the end and opened as a PR that closes the spec and every ticket.
 
 The tickets are not a list of steps. They are a **task graph** with blocking relationships between them. This means there is always a **frontier** of tickets which are ready to be grabbed.
 
@@ -40,11 +40,13 @@ Communication to and from subagents should be sparse. Communicate primarily thro
 
 6. If this changes the **frontier** of available tickets, kick off more **implementer subagents** to work on the new tickets. This allows for maximum concurrency.
 
-7. Once all tickets are complete, load the `review-changes` skill and run it on the integration branch. Fix all issues raised by the code review in a single **implementer subagent** on branch `<feature-slug>-review`, created and merged the same way.
+7. Once all tickets are complete, load the `review-changes` skill and run it on the integration branch. Fix all issues raised by the code review in a single **implementer subagent** on branch `<feature-slug>-review`, created and merged the same way, then review again; repeat while the verdict is blocking and each round fixes something.
 
 8. When the repo has a Dev stack contract, run e2e on the integration stack once the review fixes are merged: load the `dev-stack` skill in the feature worktree, bring up its stack, and run the doc's e2e command in full with `E2E_BASE_URL=<Dev URL>` (or the skill's next strongest check when the repo has no e2e suite). Fix failures the way step 7 fixes review findings, then run it again. Leave the integration stack running.
 
-9. Push the integration branch, its only push, and open a PR when the run finished clean: every ticket merged, the full suite passes on the integration branch, the e2e run passed when step 8 ran, the `review-changes` verdict is `pass` (run it again after the step 7 fixes merge), and no decision waits on the user. When the run didn't finish clean, push nothing, leave the tickets open and end the report with what blocks it. Otherwise load the `pr` skill and open the PR as its "Opening the PR" section says, naming the spec and every ticket as the issues it closes. When no PR opens, or the issue tracker doesn't live on the code host (a local tracker), resolve each ticket the way the issue tracker closes work.
+9. Push the integration branch, its only push, and open a PR when the run finished clean: every ticket merged, the full suite and typechecking pass on the integration branch, the e2e run passed when step 8 ran, the last `review-changes` verdict from step 7 is `pass`, and no decision waits on the user.
+   - **Clean:** load the `pr` skill and open the PR as its "Opening the PR" section says, as complete work, naming the spec and every ticket as the issues it closes. When the issue tracker doesn't live on the code host (a local tracker), or the `pr` skill's host check opened no PR, resolve each ticket the way the issue tracker closes work.
+   - **Not clean:** push nothing, leave every ticket open, and end the report with what blocks it.
 
 10. Finish every implementer and merger worktree through the `worktrees` skill's Finish rules, with `worktree.sh finish <path> --merged-into <integration branch>`: their branches are merged into the integration branch, not yet into the default branch. In a repo with a contract, the script destroys each one's Dev stack before it removes the worktree. Relay any worktree it leaves and why.
 

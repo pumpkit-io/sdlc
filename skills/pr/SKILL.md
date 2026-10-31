@@ -176,9 +176,9 @@ The blast radius is the potential impact or scope of the changes introduced by t
 When a skill or the user asks you to open a PR for the current branch:
 
 1. Check that a PR can open: `origin` is on GitHub or GitLab, and its CLI (`gh` or `glab`) is installed and logged in. If not, push nothing, open nothing, and say why in one line.
-2. Push the branch: `git push -u origin <branch>`.
-3. If the branch already has an open PR (`gh pr view`, `glab mr view`), the push updated it. Comment on it with what the push added, and go to step 5.
-4. Open it ready for review, not as a draft: `gh pr create` or `glab mr create`. Title it the way the repo titles its commits and write the body from the template above, ending with a `Closes #<n>` line for each issue the caller names.
+2. Push the branch: `git push -u origin <branch>`. If the push is refused, stop and report the refusal.
+3. If the branch already has an open PR (`gh pr list --head <branch> --state open`, `glab mr list --source-branch <branch>`), the push updated it. Add to its body any closing line from step 4 it lacks, comment on it with what the push added, mark it ready when the caller says the work is complete (`gh pr ready`, `glab mr update --ready`), and go to step 5.
+4. Open it: ready for review, or as a draft when the caller says the work is partial. Use `gh pr create` or `glab mr create`. Title it the way the repo titles its commits and write the body from the template above. End it with a `Closes #<n>` line for each issue the caller names that lives on this code host; name an issue from anywhere else, such as a local tracker, without the keyword.
 5. Carry out any step the repo's agent instructions (`AGENTS.md`, `CLAUDE.md`) say follows a push to a PR.
 
 Report the PR link.

@@ -23,6 +23,6 @@ Once done, load the `review-changes` skill to review the work. When you worked f
 
 Commit your work to the worktree's branch.
 
-Then push, the run's only push, and open a PR when the run finished clean: the full suite and typechecking pass, the dev stack check passed when it ran, the last `review-changes` verdict is `pass` (fix blocking findings and review again), and no decision waits on the user. Load the `pr` skill and open the PR as its "Opening the PR" section says, naming the Spec and Tickets the work came from as the issues it closes. When the run didn't finish clean, push nothing and end the report with what blocks it.
+Then push, the run's only push, and open a PR when the run finished clean: the full suite and typechecking pass, the dev stack check passed when it ran, the last `review-changes` verdict is `pass` (fix blocking findings and review again), and no decision waits on the user. Load the `pr` skill and open the PR as its "Opening the PR" section says, naming the Spec and Tickets the work came from as the issues it closes (none for work from the conversation). When the work is one Ticket of a Spec whose other Tickets are still open, the work is partial; otherwise it is complete. When the run didn't finish clean, push nothing and end the report with what blocks it.
 
 Close by naming the worktree path, the branch and the PR link, then release this session's worktree lock, as the `worktrees` skill's Release section says.
