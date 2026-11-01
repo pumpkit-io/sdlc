@@ -99,6 +99,12 @@ On **yes**, take [sdlc-review.yml](./sdlc-review.yml) unchanged as the draft of 
 
 Add to the drafts: the `.gitignore` lines `.claude/worktrees/` and `.sdlc/` that `git check-ignore` showed missing, and, for each repo-root tool that would scan `.claude/worktrees/`, the ignore entry in its own config file.
 
+**Merge policy.** Runs in every repo, after Section F. By default the guardrail hook blocks `gh pr merge` and the merge API calls, so a human merges. Ask one question:
+
+> Let agents merge pull requests in this repo? Branch protection still decides whether a merge goes through. (default: **no**)
+
+On **no**, write nothing. On **yes**, draft `docs/agents/merge.md`: a `# Merge` heading and the line `Merge policy: allow`. The hook reads that line from the repo the command runs in. Rulesets, branch protection and repository deletion stay blocked whatever the file says. When the doc already exists, keep it.
+
 **Sections G and H: Portless and the dev stack.** Only with a runnable app: read [PORTLESS-DEV-STACK.md](PORTLESS-DEV-STACK.md) and follow it. Section G sets up this machine as it goes; Section H adds drafts for step 3.
 
 ### 3. Confirm and edit
@@ -110,6 +116,7 @@ Show the user a draft of:
 - `DESIGN.md`, only when the user chose the empty skeleton in Section D
 - `.github/workflows/sdlc-review.yml`, only when the user said yes in Section E
 - `docs/agents/worktrees.md`, the `.gitignore` lines and the tool ignore entries from Section F
+- `docs/agents/merge.md`, only when the user said yes to the merge policy
 - `docs/agents/dev-stack.md`, and either `scripts/dev-stack` or the body of the "Make the dev stack worktree-safe" issue, from Section H
 
 Let them edit before writing.

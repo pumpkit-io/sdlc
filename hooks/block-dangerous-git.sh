@@ -3,10 +3,12 @@
 # Pushes to main are left to branch protection. Adapted from git-guardrails-claude-code in mattpocock/skills.
 
 PUSH_POLICY="allow"   # "allow": pushes allowed, except force and delete. "none": every push blocked.
+MERGE_POLICY="block"  # "block": merging a PR is for the human. "allow": a repo whose docs/agents/merge.md has a `Merge policy: allow` line lets agents merge.
 
 here="$(cd "$(dirname "$0")" && pwd)"
 input="$(cat)"
 cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)"
+cwd="$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null)"
 [ -z "$cmd" ] && exit 0
 
 block() {
@@ -15,6 +17,16 @@ block() {
   printf ' Do not retry or work around this: ask the user to run it themselves if it is really needed.\n' >&2
   exit 2
 }
+
+# Branch protection stays the gate, so the opt-in is the only thing checked: no permission lookup.
+merge_allowed() {
+  local top
+  [ "$MERGE_POLICY" = "allow" ] && return 0
+  top="$(git -C "${cwd:-.}" rev-parse --show-toplevel 2>/dev/null)" || return 1
+  grep -Eqi '^[[:space:]]*Merge policy:[[:space:]]*allow[[:space:]]*$' "$top/docs/agents/merge.md" 2>/dev/null
+}
+
+block_merge() { merge_allowed || block 'merging a PR is for the human'; }
 
 segments() { perl "$here/split-commands.pl" <<<"$cmd"; }
 
@@ -120,7 +132,7 @@ check_launcher() {
   done
 }
 
-# Blocks API calls that merge a PR, change branch protection or delete a repository.
+# Blocks API calls that merge a PR (unless the repo opts in), change branch protection or delete a repository.
 check_gh_api() {
   local a prev="" method="" fields=0 paths=""
   for a in "$@"; do
@@ -142,13 +154,14 @@ check_gh_api() {
   [ -z "$method" ] && { [ "$fields" = 1 ] && method=POST || method=GET; }
   for a in $paths; do
     if [ "$a" = "graphql" ]; then
-      printf '%s' "$cmd" | grep -Eq 'mergePullRequest|enablePullRequestAutoMerge|(create|update|delete)(RepositoryRuleset|BranchProtectionRule)|deleteRepository' \
-        && block 'merging or changing protection through the GraphQL API'
+      printf '%s' "$cmd" | grep -Eq '(create|update|delete)(RepositoryRuleset|BranchProtectionRule)|deleteRepository' \
+        && block 'changing protection or deleting a repository through the GraphQL API'
+      printf '%s' "$cmd" | grep -Eq 'mergePullRequest|enablePullRequestAutoMerge' && block_merge
       continue
     fi
     [ "$method" = "GET" ] && continue
     case "$a" in
-      */pulls/*/merge|*/pulls/*/auto-merge) block 'merging a PR is for the human' ;;
+      */pulls/*/merge|*/pulls/*/auto-merge) block_merge ;;
       */rulesets|*/rulesets/*|*/branches/*/protection|*/branches/*/protection/*) block 'changing branch protection' ;;
     esac
     [ "$method" = "DELETE" ] && case "$a" in repos/*/*/*) ;; repos/*/*) block 'deleting a repository' ;; esac
@@ -157,7 +170,7 @@ check_gh_api() {
 
 check_gh() {
   case "$1" in
-    pr) [ "$2" = "merge" ] && block 'merging a PR is for the human' ;;
+    pr) [ "$2" = "merge" ] && block_merge ;;
     repo)
       [ "$2" = "delete" ] && block 'deleting a repository'
       if [ "$2" = "edit" ]; then
