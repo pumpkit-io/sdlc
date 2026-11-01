@@ -38,12 +38,12 @@ Exactly one of:
 
 - **Ready to merge**: the run finished clean and the PR is open for review.
 - **Draft PR, partial work**: the run finished clean and the PR is open as a draft, because other Tickets of the Spec are still open.
-- **Clean, no PR**: the run finished clean, but the `pr` skill opened no PR (no supported code host, or the push was refused). Open says why.
+- **Clean, no PR**: every check passed, but the `pr` skill opened no PR (no supported code host, or the push was refused). Open says why.
 - **Blocked, nothing pushed**: the run didn't finish clean, and Open says why.
 
 ## Sections
 
-- **Links**: one `Label: value` bullet each, with URLs and absolute paths written out in full, so the terminal makes them clickable. Add `Issues: <issues>` for the Spec and Tickets the work came from, as the PR names them, and the `dev-stack` skill's `Dev URL:` line when a **Dev stack** is left running. A run with no PR has no PR line.
+- **Links**: one `Label: value` bullet each, with URLs and absolute paths written out in full, so the terminal makes them clickable. Add `Issues: <issues>` for the Spec and Tickets the work came from, named as the `pr` skill names them, and the `dev-stack` skill's `Dev URL:` line when a **Dev stack** is left running. A run with no PR has no PR line.
 - **Done**: what changed in the system's behaviour, at most five one-line bullets. Name a function or file only when it is the subject of the change. Tag anything outside what the source asked for `(beyond the ask)`, and a bug the review caught and you fixed `(fixed in review)`.
 - **Checks**: one bullet for each of typechecking, the full test suite, the last `review-changes` verdict, the dev stack or e2e check, and the tests added. A skipped check says why in a clause. When the `dev-stack` skill ran, its `Checked there:` line is the dev stack bullet.
 - **Open**: what is wrong or unfinished. Blockers come first, then review findings left unfixed, bugs found outside the work's scope, and any worktree left behind that blocks something, each with where it lives.
