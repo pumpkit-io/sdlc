@@ -205,7 +205,7 @@ When a skill or the user asks you to open a PR for the current branch, the calle
 3. If the branch already has an open PR (`gh pr list --head <branch> --state open`, `glab mr list --source-branch <branch>`), the push updated it. Add to its body any closing line from step 4 it lacks, bring its stack table up to date with the caller's Stack, comment on it with what the push added, mark it ready when the caller says the work is complete (`gh pr ready`, `glab mr update --ready`), and go to step 5.
 4. Open it: ready for review, or as a draft when the caller says the work is partial. Use `gh pr create --base <base>` or `glab mr create --target-branch <base>`, leaving the flag out when no base is named. Title it the way the repo titles its commits and write the body from the template above, with the stack table when the caller names a Stack. End it with a `Closes #<n>` line for each issue the caller names that lives on this code host; name an issue from anywhere else, such as a local tracker, without the keyword.
 
-In a Stack, each pull request closes only its own Ticket. The top pull request also closes the Spec. The caller names the issues, so never add the Spec's number to a lower pull request.
+In a Stack, each pull request closes only its own Ticket. The top pull request, the last one in the Stack, also closes the Spec. The caller names the issues, so never add the Spec's number to a lower pull request.
 5. Carry out any step the repo's agent instructions (`AGENTS.md`, `CLAUDE.md`) say follows a push to a PR.
 
 Report the PR link.
