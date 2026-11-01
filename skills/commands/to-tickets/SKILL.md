@@ -42,24 +42,34 @@ Break the work into **tracer bullet** tickets.
 
 Give each ticket its **blocking edges**: the other tickets that must complete before it can start. A ticket with no blockers can start immediately.
 
+Give each ticket a `Touches:` line naming the areas of the code it changes, by area and not by file path (for example "auth middleware, session schema"). Step 5 reads these lines to decide which tickets can be built side by side.
+
 **Wide refactors are the exception to vertical slicing.** A **wide refactor** is one mechanical change (rename a column, retype a shared symbol) whose **blast radius** fans across the whole codebase, so a single edit breaks thousands of call sites at once and no vertical slice can land green. Don't force it into a tracer bullet; sequence it as **expand–contract**. First expand: add the new form beside the old so nothing breaks. Then migrate the call sites over in batches sized by blast radius (per package, per directory), each batch its own ticket blocked by the expand, keeping CI green batch to batch because the old form still exists. Finally contract: delete the old form once no caller remains, in a ticket blocked by every migrate batch. The expand, the batches and the contract are tickets in the same Stack, like any others.
 
 ### 4. Check the breakdown
 
 Check every ticket against the vertical-slice rules, and check that each blocking edge names a ticket this one cannot start without. Fix what the check turns up. A question the source left open goes under **Open questions** in the ticket it affects.
 
-### 5. Publish the tickets to the configured tracker
+### 5. Group the tickets into the Implementation flow
+
+Sort the tickets into **Groups**. Work level by level through the blocking edges: a ticket joins the earliest level in which all its blockers sit in earlier Groups. When tickets of one level have overlapping `Touches:` lines, split the level into several Groups so that no two tickets in a Group overlap. A Group may hold a single ticket.
+
+The ordered Groups are the **Implementation flow**. Inside a Group, chain order is ticket-number order. Number the tickets in flow order (Group by Group, then by chain order), so blockers always come first.
+
+Each ticket's `Stacks on:` line names the ticket before it in the flow. The first ticket stacks on the feature branch, or on `main` when the grilling wrote no docs and the branch holds none. Check that no two tickets in a Group overlap in `Touches:` and that every `Stacks on:` target precedes its ticket in the flow.
+
+### 6. Publish the tickets to the configured tracker
 
 Load the `prose-style` skill and write every ticket body in that style. A ticket that builds UI points to the spec's UI Design section instead of restating the design. Every ticket starts with the spec's **Feature branch link** (`Branch: <branch>`), copied as it is; without a spec, the link names the branch this session's worktree is on.
 
-Publish the tickets. **How** depends on the tracker `/setup-sdlc` configured; the tickets are the same either way, only the shape of the blocking edges changes:
+Publish the tickets in flow order. **How** depends on the tracker `/setup-sdlc` configured; the tickets are the same either way, only the shape of the blocking edges changes:
 
-- **Local files** → write one file per ticket under `.scratch/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01` in dependency order (blockers first). Each file's "Blocked by" lists the numbers/titles it depends on. Use the per-ticket file template below: one ticket per file, never a single combined file.
-- **A real issue tracker (GitHub, Linear, …)** → publish one issue per ticket in dependency order (blockers first) so each ticket's blocking edges can reference real identifiers. Use the platform's native blocking / sub-issue relationship where it has one; otherwise set each ticket's "Blocked by" to the blocking issues. Apply the `ready-for-agent` triage label unless instructed otherwise; the tickets are agent-grabbable by construction.
+- **Local files** → write one file per ticket under `.scratch/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01` in flow order (blockers first). Each file's "Blocked by" lists the numbers/titles it depends on. Use the per-ticket file template below: one ticket per file, never a single combined file.
+- **A real issue tracker (GitHub, Linear, …)** → publish one issue per ticket in flow order (blockers first) so each ticket's blocking edges and `Stacks on:` line can reference real identifiers. Use the platform's native blocking / sub-issue relationship where it has one; otherwise set each ticket's "Blocked by" to the blocking issues. Apply the `ready-for-agent` triage label unless instructed otherwise; the tickets are agent-grabbable by construction.
 
 Work the **frontier**: any ticket whose blockers are all done. For a purely linear chain that means top to bottom.
 
-Do NOT close or modify any parent issue.
+Do NOT close or modify any parent issue, with one exception: when the source is a Spec on the tracker, append the Implementation flow to its `## Implementation flow` section, replacing the placeholder `to-spec` left there, and change nothing else in the body. With a local-file Spec, fill the same section in the file. Write the flow as the ordered Groups, each listing its tickets by link or number and title.
 
 <local-ticket-template>
 
@@ -70,6 +80,10 @@ Branch: <feature branch>
 **What to build:** the end-to-end behaviour this ticket makes work, from the user's perspective, not a layer-by-layer implementation list.
 
 **Blocked by:** the numbers/titles of the tickets that gate this one, or "None (can start immediately)".
+
+**Touches:** the areas of the code this ticket changes.
+
+**Stacks on:** the ticket before this one in the Implementation flow, or the feature branch (`main` when there are no grilling docs) for the first ticket.
 
 **Status:** ready-for-agent
 
@@ -97,6 +111,12 @@ The end-to-end behaviour this ticket makes work, from the user's perspective, no
 - [ ] Criterion 1
 - [ ] Criterion 2
 
+## Stack
+
+- Group: the Group's number in the Implementation flow
+- Touches: the areas of the code this ticket changes
+- Stacks on: the ticket before this one in the flow, or the feature branch (`main` when there are no grilling docs) for the first ticket
+
 ## Blocked by
 
 - A reference to each blocking ticket, or "None (can start immediately)".
@@ -111,4 +131,4 @@ In either form, avoid specific file paths or code snippets: they go stale fast. 
 
 ## Finishing
 
-The published tickets are this skill's only output. Close by listing them in dependency order, each with its title, its link (or file path, for local files) and its blockers, then naming the next step: a fresh session per frontier ticket with `implement <ticket>`, or `implement-spec <spec>` to run them all unattended. Last, release this session's worktree lock, as the `worktrees` skill's Release section says.
+The published tickets and the Implementation flow section are this skill's only output. Close by listing the Implementation flow: each Group in order, and in each Group its tickets with title, link (or file path, for local files), blockers and `Stacks on:` target. Then name the next step: a fresh session per ticket with `implement <ticket>`, in flow order, or `implement-spec <spec>` to run the whole flow unattended. Last, release this session's worktree lock, as the `worktrees` skill's Release section says.
