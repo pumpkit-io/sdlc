@@ -32,6 +32,10 @@ Use this template for writing the PR body:
 **Blast Radius:** <one-word description>
 
 <optional: potential ramifications of merge>
+
+## Stack
+
+<only for a pull request in a Stack>
 ```
 
 ## Sections
@@ -171,14 +175,37 @@ Describe whether it's a one-way or two-way door. You can walk back through two-w
 
 The blast radius is the potential impact or scope of the changes introduced by this PR. Consider all possibilities. Examples are layout shift, breakages for consumers, mobile responsiveness, etc.
 
+### Stack
+
+Only a pull request in a **Stack** has this section, and it is the last one in the body. It is a Markdown table with one row per pull request, in merge order, first to last:
+
+```markdown
+## Stack
+
+Merge first to last.
+
+| # | Ticket | Pull request |
+|---|--------|--------------|
+| 0 | Grilling docs | #51 |
+| 1 | #48 Ticket title | #52 |
+| 2 | #49 Ticket title | #53 (this PR) |
+```
+
+- `#` is the position in the Stack. The docs pull request is 0 and appears only when the Stack has one; otherwise the first Ticket is 1.
+- `Ticket` is the issue number and title, or the issue link when the repo keeps its issues on another host.
+- `Pull request` is the link, or the number on the same host. The row for the pull request being written ends with `(this PR)`.
+- A pull request not yet opened has `pending` in its `Pull request` cell. Rewrite the cell when it opens.
+
 ## Opening the PR
 
-When a skill or the user asks you to open a PR for the current branch:
+When a skill or the user asks you to open a PR for the current branch, the caller may name a base branch and the Tickets it closes. With no base named, the PR targets the default branch.
 
 1. Check that a PR can open: `origin` is on GitHub or GitLab, and its CLI (`gh` or `glab`) is installed and logged in. If not, push nothing, open nothing, and say why in one line.
 2. Push the branch: `git push -u origin <branch>`. If the push is refused, stop and report the refusal.
-3. If the branch already has an open PR (`gh pr list --head <branch> --state open`, `glab mr list --source-branch <branch>`), the push updated it. Add to its body any closing line from step 4 it lacks, comment on it with what the push added, mark it ready when the caller says the work is complete (`gh pr ready`, `glab mr update --ready`), and go to step 5.
-4. Open it: ready for review, or as a draft when the caller says the work is partial. Use `gh pr create` or `glab mr create`. Title it the way the repo titles its commits and write the body from the template above. End it with a `Closes #<n>` line for each issue the caller names that lives on this code host; name an issue from anywhere else, such as a local tracker, without the keyword.
+3. If the branch already has an open PR (`gh pr list --head <branch> --state open`, `glab mr list --source-branch <branch>`), the push updated it. Add to its body any closing line from step 4 it lacks, bring its stack table up to date with the caller's Stack, comment on it with what the push added, mark it ready when the caller says the work is complete (`gh pr ready`, `glab mr update --ready`), and go to step 5.
+4. Open it: ready for review, or as a draft when the caller says the work is partial. Use `gh pr create --base <base>` or `glab mr create --target-branch <base>`, leaving the flag out when no base is named. Title it the way the repo titles its commits and write the body from the template above, with the stack table when the caller names a Stack. End it with a `Closes #<n>` line for each issue the caller names that lives on this code host; name an issue from anywhere else, such as a local tracker, without the keyword.
+
+In a Stack, each pull request closes only its own Ticket. The top pull request also closes the Spec. The caller names the issues, so never add the Spec's number to a lower pull request.
 5. Carry out any step the repo's agent instructions (`AGENTS.md`, `CLAUDE.md`) say follows a push to a PR.
 
 Report the PR link.
