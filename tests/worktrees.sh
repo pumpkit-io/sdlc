@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Drives skills/worktrees/scripts/worktree.sh against scratch repos and checks its output and exit codes.
+# Drives skills/auto/worktrees/scripts/worktree.sh against scratch repos and checks its output and exit codes.
 # Usage: tests/worktrees.sh. Scratch repos go under $TMPDIR.
 set -u
 
-script="$(cd "$(dirname "$0")/.." && pwd)/skills/worktrees/scripts/worktree.sh"
+script="$(cd "$(dirname "$0")/.." && pwd)/skills/auto/worktrees/scripts/worktree.sh"
 scratch="$(mktemp -d "${TMPDIR:-/tmp}/worktrees-test.XXXXXX")"
 trap 'rm -rf "$scratch"' EXIT
 . "$(dirname "$0")/lib.sh"

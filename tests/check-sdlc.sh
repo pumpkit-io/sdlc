@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Runs skills/check-sdlc/scripts/check.sh against scratch repos in known states and checks each line's id and status.
+# Runs skills/commands/check-sdlc/scripts/check.sh against scratch repos in known states and checks each line's id and status.
 # Usage: tests/check-sdlc.sh. Scratch repos go under $TMPDIR; the real Portless install is kept off PATH.
 set -u
 
-script="$(cd "$(dirname "$0")/.." && pwd)/skills/check-sdlc/scripts/check.sh"
-worktree="$(cd "$(dirname "$0")/.." && pwd)/skills/worktrees/scripts/worktree.sh"
+script="$(cd "$(dirname "$0")/.." && pwd)/skills/commands/check-sdlc/scripts/check.sh"
+worktree="$(cd "$(dirname "$0")/.." && pwd)/skills/auto/worktrees/scripts/worktree.sh"
 scratch="$(mktemp -d "${TMPDIR:-/tmp}/check-sdlc-test.XXXXXX")"
 trap 'rm -rf "$scratch"' EXIT
 . "$(dirname "$0")/lib.sh"
@@ -118,7 +118,7 @@ echo "# uncommitted change in the main checkout"
 echo x > "$noignore/stray.txt"
 check "worktrees.main-clean warns" "warn" "$(status worktrees.main-clean "$(run "$noignore")")"
 
-# dev_doc <repo> <proxy mode>: a dev stack doc in the format of skills/dev-stack/CONTRACT.md.
+# dev_doc <repo> <proxy mode>: a dev stack doc in the format of skills/auto/dev-stack/CONTRACT.md.
 dev_doc() {
   cat > "$1/docs/agents/dev-stack.md" <<EOF
 # Dev stack

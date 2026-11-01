@@ -1,6 +1,6 @@
 # sdlc
 
-A set of agent skills (slash commands and behaviors) shipped as one Claude Code plugin. Skills live in `skills/<name>/` and read per-repo configuration written by `/setup-sdlc`.
+A set of agent skills (slash commands and behaviors) shipped as one Claude Code plugin. Skills live in `skills/<type>/<name>/`, grouped as commands, automatic skills and reference skills, and read per-repo configuration written by `/setup-sdlc`.
 
 ## Language
 

@@ -4,7 +4,7 @@
 set -u
 
 here="$(cd "$(dirname "$0")" && pwd -P)"
-worktree_sh="$here/../../worktrees/scripts/worktree.sh"
+worktree_sh="$here/../../../auto/worktrees/scripts/worktree.sh"
 templates="$here/../../setup-sdlc"
 state_dir="${PORTLESS_STATE_DIR:-$HOME/.portless}"
 
@@ -258,7 +258,7 @@ fi
 
 dev_script="$top/scripts/dev-stack"
 project="" pinned="" cap=4 rec_port="" rec_tls=""
-# The doc's field lines, in the format of skills/dev-stack/CONTRACT.md.
+# The doc's field lines, in the format of skills/auto/dev-stack/CONTRACT.md.
 field() { sed -n "s/^- $1: \(.*\)\$/\1/p" "$dev_doc" | head -n 1 | tr -d '`'; }
 if [ -f "$dev_doc" ]; then
   project="$(field Project)"

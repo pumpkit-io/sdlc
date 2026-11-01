@@ -18,7 +18,7 @@ Never edit files or commit in the main checkout, even for a one-line change. Bef
 
 ## Repo rules
 
-Every skill lives in `skills/<name>/` and ships in the plugin: each one has an entry in `.claude-plugin/plugin.json`'s `skills` array and in the skill-types table in `README.md`. Adding, renaming or removing a skill means updating both. A skill you don't want to ship doesn't belong in this repo.
+Every skill lives in `skills/<type>/<name>/`, where `<type>` is `commands`, `auto` or `reference` (the three types below), and ships in the plugin: each one has an entry in `.claude-plugin/plugin.json`'s `skills` array and in the skill-types table in `README.md`. Adding, renaming or removing a skill means updating both. A skill you don't want to ship doesn't belong in this repo.
 
 Each skill is one of three types:
 
@@ -26,7 +26,7 @@ Each skill is one of three types:
 - **Automatic** (model-invoked): no invocation flag; the `description` carries the trigger phrases the agent matches on.
 - **Reference**: `user-invocable: false` in the frontmatter. Reached only by other skills, hidden from the slash menu.
 
-`skills/writing-for-agents/SKILL-MECHANICS.md` explains how to choose. Every skill keeps an `agents/openai.yaml` so the set stays installable in Codex and other Agent Skills harnesses via `npx skills add`.
+`skills/reference/writing-for-agents/SKILL-MECHANICS.md` explains how to choose. Every skill keeps an `agents/openai.yaml` so the set stays installable in Codex and other Agent Skills harnesses via `npx skills add`. The installer finds nested skills and flattens them into `.agents/skills/<name>/`, so the type folders exist only in this repo; a layout with the type folders at the repo root would hide them from it.
 
 Portability: the skills must work in every agent the README's support matrix names. Skills load other skills with "Load the `X` skill" and never name a vendor tool. Every sub-agent instruction carries an inline fallback for agents that can't spawn one. A skill that can't degrade declares it in a `compatibility` frontmatter field and its first body line says what to use instead. Changing a skill's type flags, or the hook, means updating the README support matrix. `docs/adr/0002-agent-neutral-skills-single-native-package.md` records why the Claude Code plugin is the only native package.
 
@@ -38,10 +38,11 @@ Test the hooks with `hooks/test-hooks.sh`. It pipes each case's payload (`tool_i
 
 Each skill script has a test script that drives it against scratch repos under `$TMPDIR` and exits non-zero on any failing case; run it after changing the script. They share helpers in `tests/lib.sh`.
 
-- `skills/worktrees/scripts/worktree.sh`: `tests/worktrees.sh`
-- `skills/domain-modeling/scripts/next-adr.sh`: `tests/next-adr.sh`
-- `skills/check-sdlc/scripts/check.sh`: `tests/check-sdlc.sh`
-- `skills/dev-stack/scripts/dev-stack.template.sh`: `tests/dev-stack.sh`, against fake `portless`, `docker`, `curl` and `node`, so it touches no real proxy or container.
+- `skills/auto/worktrees/scripts/worktree.sh`: `tests/worktrees.sh`
+- `skills/auto/domain-modeling/scripts/next-adr.sh`: `tests/next-adr.sh`
+- `skills/commands/check-sdlc/scripts/check.sh`: `tests/check-sdlc.sh`
+- `skills/auto/dev-stack/scripts/dev-stack.template.sh`: `tests/dev-stack.sh`, against fake `portless`, `docker`, `curl` and `node`, so it touches no real proxy or container.
+- The skill layout: `tests/skill-layout.sh` checks that each skill's folder matches its frontmatter type and that the manifest lists every skill once.
 
 Skills that cannot work without per-repo config point to `/setup-sdlc`; the others degrade silently. See `docs/adr/0001-explicit-setup-pointer-only-for-hard-dependencies.md`.
 

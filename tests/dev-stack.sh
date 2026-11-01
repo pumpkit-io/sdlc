@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Runs skills/dev-stack/scripts/dev-stack.template.sh (strategy A) against fake portless, docker, curl and node.
+# Runs skills/auto/dev-stack/scripts/dev-stack.template.sh (strategy A) against fake portless, docker, curl and node.
 # Usage: tests/dev-stack.sh. Scratch repos go under $TMPDIR; no real container, proxy or route is touched.
 set -u
 
-template="$(cd "$(dirname "$0")/.." && pwd)/skills/dev-stack/scripts/dev-stack.template.sh"
+template="$(cd "$(dirname "$0")/.." && pwd)/skills/auto/dev-stack/scripts/dev-stack.template.sh"
 scratch="$(mktemp -d "${TMPDIR:-/tmp}/dev-stack-test.XXXXXX")"
 . "$(dirname "$0")/lib.sh"
 fake="$scratch/fake"
