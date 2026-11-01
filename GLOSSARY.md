@@ -37,6 +37,10 @@ _Avoid_: style guide, design system (when meaning the direction itself)
 **Drift**:
 A contradiction between existing UI and the **Design direction**. It is reported, never resolved by the agent, because only the user knows which side is wrong.
 
+**Run report**:
+The message an implementing skill ends its run with, telling the user what the run did and what is left for them. A sub-agent's report to the session that spawned it is not a run report.
+_Avoid_: final summary, closing report, wrap-up
+
 ### Worktrees and dev stacks
 
 **Main checkout**:
