@@ -68,7 +68,7 @@ As of 2026-10. Agents change fast; open an issue if a row is out of date.
 
 The dev stack runs in any agent that can run shell commands, since it is only `scripts/dev-stack` and Portless. Only Claude Code moves the session into a worktree; the other agents stay where they started and work in the worktree by path, which the `worktrees` skill tells them to do.
 
-Without sub-agents, `review-changes` runs its three reviews one after another, `deslop` runs its waves in the current session, `refresh-spec` compares one ticket at a time, and `implement-spec` stops and tells you to run `implement` one ticket at a time.
+Without sub-agents, `review-changes` runs its three reviews one after another, `deslop` runs its waves in the current session, `refresh-spec` compares one ticket at a time, and `implement-spec`, which builds each Group in parallel, stops and tells you to run `implement` one ticket at a time.
 
 ## Skill types
 
@@ -92,20 +92,27 @@ Open the agent in your **Main checkout**, on any branch, and type the skills bel
 grill-with-docs <idea>      creates .claude/worktrees/<slug>/ on feat/<slug>, then
                             interviews; updates GLOSSARY.md and ADRs there
 to-spec                     spec issue on the tracker, starting "Branch: feat/<slug>"
-to-tickets                  vertical-slice tickets with blocking links, each with
-                            the same Branch line
+to-tickets                  small tickets with blocking links, each with the same
+                            Branch line, a Touches line and a Stacks on line; sorts
+                            them into Groups and writes the Implementation flow
+                            into the spec
 (fresh session, in the main checkout again)
 implement <ticket>          follows the Branch line into the feature's worktree;
                             in a repo with an app, ends with the change running
                             at its Dev URL; once tests and review pass, pushes
-                            and opens a PR
-  or implement-spec <spec>  all tickets in parallel worktrees, unattended, then
-                            one push and one PR for the whole spec
+                            and opens a PR against the ticket it stacks on
+  or implement-spec <spec>  unattended, one Group at a time: the tickets of a
+                            Group build in parallel worktrees, each becomes its
+                            own PR, and the Group's branches are chained into
+                            the Stack; a spec-wide review and one e2e run on the
+                            tip follow, with fixes in an extra top PR
 "open a PR"                 when implement stopped on a blocker you resolved;
                             the pr skill pushes, opens it and shapes the body
 (after merging)
 worktrees sweep             removes every clean worktree whose branch is merged
 ```
+
+The PRs of a spec form a Stack: a linear chain rooted at the feature branch, which opens as PR 0 with the grilling docs (a spec with no docs starts at `main`). Each PR shows only its own ticket's changes against the branch before it, and ends with a table of the Stack. The Groups run in the order of the Implementation flow, and the next Group starts only when every PR in the current one has passed review and CI; if a Group cannot finish clean, the later Groups do not start and the Run report says where the Stack stopped. The agent never merges. Merge the Stack first to last with merge commits, so each merge leaves the next PR's diff unchanged and any prefix of the Stack is shippable. [ADR 0008](./docs/adr/0008-one-linear-stack-of-pull-requests-per-spec.md) has the reasoning.
 
 Each skill says where it moved the session in one line (`Worktree: <path> (<branch>)`). Your routine stays the same, and your main checkout stays as you left it: no agent edits or commits there. Start as many grilling sessions at once as you like; each gets its own worktree and branch, and ADR numbers stay distinct across branches. Two sessions never share a worktree: a second `implement` on the same feature stops, names the session holding the worktree's lock, and points you to `implement-spec`.
 

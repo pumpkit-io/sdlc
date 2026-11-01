@@ -48,7 +48,7 @@ A repo's original clone. It belongs to the user, on whatever branch the user has
 _Avoid_: main worktree, root checkout
 
 **Worktree**:
-A git linked worktree holding one unit of work on its own branch, created from the **Main checkout**. A **Feature worktree** holds a feature branch, which is also the integration branch when `implement-spec` runs; an **Implementer worktree** holds one **Ticket**'s branch while `implement-spec` builds it.
+A git linked worktree holding one unit of work on its own branch, created from the **Main checkout**. A **Feature worktree** holds a feature branch, which is the root of the **Stack** when `implement-spec` runs; an **Implementer worktree** holds one **Ticket**'s branch while `implement-spec` builds it.
 _Avoid_: workspace, sandbox, checkout (for a linked worktree)
 
 **Slug**:
@@ -60,6 +60,18 @@ _Avoid_: claim, lease
 
 **Feature branch link**:
 The line on a **Spec**, copied onto each of its **Tickets**, naming the feature branch the work lives on. It is how a fresh session finds the **Feature worktree** for that work.
+
+**Stack**:
+The ordered chain of pull requests for one **Spec**, rooted at the feature branch. Each pull request shows only its own **Ticket**'s changes against the branch before it, and the pull requests are merged first to last.
+_Avoid_: integration branch, PR chain
+
+**Group**:
+Tickets of one **Spec** that have no blocking edge between them and touch separate areas of the code, so they are built in parallel. A Group may hold a single Ticket. The next Group starts only when every pull request in this one has passed review and CI.
+_Avoid_: wave, stage, batch
+
+**Implementation flow**:
+The ordered list of **Groups** that `to-tickets` publishes in the **Spec**. It fixes each **Ticket**'s place in the **Stack**.
+_Avoid_: plan, schedule
 
 **Dev stack**:
 One running copy of a repo's app for one **Worktree**, with its own processes, its own data and its own **Dev URL**, and no effect on the outside world.
@@ -82,6 +94,7 @@ _Avoid_: dev script, launcher
 - A **Main checkout** has many **Worktrees**; a **Worktree** has one **Slug**, at most one **Dev stack** and at most one active **Worktree lock**
 - A **Dev stack** has one **Dev URL** and is started and stopped only through its repo's **Dev stack contract**
 - A **Spec** has one **Feature branch link**, which leads to one **Feature worktree**; each **Implementer worktree** branches from a **Feature worktree**
+- A **Spec** has one **Stack**, built from its **Implementation flow**: an ordered list of **Groups**, each holding one or more **Tickets**; every **Ticket** is one pull request in the **Stack**
 
 ## Flagged ambiguities
 

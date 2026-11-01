@@ -29,7 +29,7 @@ The argument is a Spec or a single Ticket.
 - **A Spec**: read it, then its Tickets: its native sub-issues, plus every Issue whose `## Parent` section points at it. On a local tracker, the Spec is the feature folder's spec file and the Tickets are the files in its `issues/` folder.
 - **A single Ticket**: refresh only that Ticket, and read its Spec as context.
 
-Read every Issue's full body and comments. A comment from an earlier refresh names its baseline; the commits since that baseline are where to look first.
+Read every Issue's full body and comments, including each Ticket's `Touches:` and `Stacks on:` lines and the Spec's `## Implementation flow` section. A comment from an earlier refresh names its baseline; the commits since that baseline are where to look first.
 
 Sort the Tickets:
 
@@ -50,9 +50,17 @@ Sub-agents only report: this session drafts and applies every change, so the edi
 - **Vocabulary**: words the glossary now defines differently or avoids.
 - **Contradiction**: places where the code made a different choice than the Ticket or Spec asks for, as opposed to running ahead of it.
 - **Edges**: blocking edges that no longer hold, or new ones the code now implies.
+- **Areas**: areas in the Ticket's `Touches:` line that moved, were renamed or no longer exist, and areas the Ticket's work now reaches that the line omits. Check that `Stacks on:` names a Ticket (or branch) that still exists and still precedes it.
 - **Gap**: work the Spec needs that no Ticket covers.
 
 The comparison is done when every acceptance criterion of every Ticket is marked done, not done, or contradicted, with evidence.
+
+Then check the **Implementation flow** against the Tickets' blocking edges and `Touches:` lines, in this session and across all Tickets, since no single sub-agent sees them all. Record each **Flow** finding with the Tickets it concerns:
+
+- a Ticket placed before one of its blockers, or a `Stacks on:` target that does not precede its Ticket;
+- two Tickets of one Group that now overlap in `Touches:`, or are now joined by a blocking edge;
+- a Ticket missing from the flow, or listed in it after being closed or removed;
+- a flow that lists the Groups differently from the `Group:` and `Stacks on:` lines of the Tickets.
 
 Then check each closed Ticket for its work in the code. One whose work is missing (reverted, regressed) becomes a finding for the report, never a reopen: whether it is a bug or an intended removal is a call for `triage`.
 
@@ -66,7 +74,10 @@ Turn the findings into proposed changes. You may:
 - narrow a partly done Ticket to the work that is left, naming what already exists;
 - close a Ticket whose every criterion is met, with a closing comment citing the evidence;
 - redraw blocking edges;
+- update the `Touches:` line of an open Ticket to the areas the code now has;
 - edit the Spec body.
+
+The Implementation flow and every in-flight Ticket's `Touches:` and `Stacks on:` lines stay as they are. A **Flow** finding is reported, and the regrouping it calls for is a loose end for `to-tickets`: moving a Ticket between Groups or changing its `Stacks on:` target shifts the base of a pull request that may already exist.
 
 Gaps become loose ends for `to-tickets`, never new Tickets: new scope is that skill's job, and splitting or merging Tickets is too.
 
@@ -82,7 +93,7 @@ Write each draft body to the OS temporary directory, never into the repo, and sh
 2. The Tickets to close, with their evidence.
 3. The blocking edges to add or remove.
 4. The questions: each contradiction, with both sides.
-5. Report only: findings on in-flight Tickets, closed Tickets whose work is missing, and gaps.
+5. Report only: findings on in-flight Tickets (their `Touches:` and `Stacks on:` included), Flow findings, closed Tickets whose work is missing, and gaps.
 
 If nothing is stale, say the Issues match the code at the baseline and stop.
 
@@ -98,4 +109,4 @@ Apply the approved items through the tracker's conventions. The step is done whe
 
 ## Finishing
 
-List every Issue changed, with its link (or file path) and a line on what changed. Then list the loose ends: the questions the user deferred, code fixes the contradictions call for, in-flight findings for the assignee, closed Tickets for `triage`, and gaps for `to-tickets`. Name the next step: `implement <ticket>` for a frontier Ticket, or `implement-spec <spec>` to run them all.
+List every Issue changed, with its link (or file path) and a line on what changed. Then list the loose ends: the questions the user deferred, code fixes the contradictions call for, in-flight findings for the assignee, Flow findings for `to-tickets` to regroup, closed Tickets for `triage`, and gaps for `to-tickets`. Name the next step: `implement <ticket>` for a frontier Ticket, or `implement-spec <spec>` to run them all.
