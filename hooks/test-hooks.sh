@@ -20,6 +20,10 @@ scratch_repo() {
 scratch_repo clean '# Retry once: the mirror drops the first request after idle.'
 scratch_repo slop '# Step 1: build the thing'
 clean="$scratch/clean"
+git init -q "$scratch/merge-ok"
+mkdir -p "$scratch/merge-ok/docs/agents"
+printf '# Merge\n\nMerge policy: allow\n' >"$scratch/merge-ok/docs/agents/merge.md"
+mergeok="$scratch/merge-ok"
 slop="$scratch/slop"
 
 pass=0
@@ -68,6 +72,20 @@ guard block 'gh repo edit --visibility public'
 guard block 'gh api -X PUT repos/o/r/pulls/1/merge'
 guard block 'gh api -X DELETE repos/o/r'
 guard allow 'gh api repos/o/r/pulls/1'
+mg() { check "$1" block-dangerous-git "$mergeok" command "$2"; }
+mg allow 'gh pr merge 12 --squash'
+mg allow 'gh api -X PUT repos/o/r/pulls/1/merge'
+mg allow 'gh api -X PUT repos/o/r/pulls/1/auto-merge'
+mg allow 'gh api graphql -f query="mutation { mergePullRequest(input: {pullRequestId: \"x\"}) { clientMutationId } }"'
+mg block 'gh api -X POST repos/o/r/rulesets'
+mg block 'gh api -X PUT repos/o/r/branches/main/protection'
+mg block 'gh api -X DELETE repos/o/r'
+mg block 'gh repo delete pumpkit-io/x'
+guard block 'gh api -X POST repos/o/r/rulesets'
+guard block 'gh api -X PUT repos/o/r/branches/main/protection'
+guard block 'gh api graphql -f query="mutation { mergePullRequest(input: {}) { x } }"'
+guard block 'gh api graphql -f query="mutation { deleteBranchProtectionRule(input: {}) { x } }"'
+mg block 'gh api graphql -f query="mutation { deleteBranchProtectionRule(input: {}) { x } }"'
 guard block 'sh -c "git reset --hard"'
 guard block 'eval "git push --force"'
 guard block "$(printf 'bash <<EOF\ngit reset --hard\nEOF')"
