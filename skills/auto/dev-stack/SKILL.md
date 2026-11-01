@@ -42,7 +42,7 @@ Done when every change reachable over HTTP or UI has been checked at the Dev URL
 
 ## 4. Report
 
-Leave the stack running. End the report with these two lines:
+Leave the stack running. End the report with these two lines, or in a Run report, put them where the `run-report` skill says:
 
 ```
 Dev URL: <Dev URL> (running)

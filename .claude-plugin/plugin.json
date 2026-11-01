@@ -43,6 +43,7 @@
     "./skills/commands/retro",
     "./skills/auto/prototype",
     "./skills/reference/grilling",
+    "./skills/reference/run-report",
     "./skills/commands/handoff",
     "./skills/reference/writing-for-agents",
     "./skills/auto/setup-pre-commit"
