@@ -144,6 +144,7 @@ main_repo() {
   fi
   git -C "$r" add -A
   git -C "$r" commit -qm init
+  printf '%s/\n' "$folder" >>"$r/.git/info/exclude"
   git -C "$r" worktree add -q -b x "$r/$folder/x"
 }
 rule="$(printf '# Agents\n\n### Worktrees\n\nNever edit files or commit in the main checkout.')"
@@ -194,6 +195,10 @@ run allow "$main" 'git merge --ff-only origin/main'
 run block "$main" 'git pull'
 run block "$main" 'git pull --rebase origin main'
 run allow "$main" 'git pull --ff-only'
+run allow "$main" 'git pull --ff-only origin main'
+run allow "$wt" 'git pull --ff-only'
+run block "$main" 'git pull --ff-only --rebase'
+run block "$main" 'git pull --no-ff'
 run block "$main" 'git rebase origin/main'
 run block "$main" 'git stash'
 run block "$main" 'git stash pop'
@@ -225,6 +230,15 @@ run allow "$wt" 'git commit -m "never git add in the main checkout"'
 SDLC_ALLOW_MAIN_CHECKOUT=1 run allow "$main" 'git commit -m x'
 run block "$scratch/older" 'git commit -m x'
 run allow "$scratch/plain" 'git commit -m x'
+
+# git pull --ff-only in the main checkout needs the default branch and a clean tree.
+git -C "$main" checkout -q -b topic
+run block "$main" 'git pull --ff-only'
+git -C "$main" checkout -q -
+printf 'x\n' >"$main/dirty.txt"
+run block "$main" 'git pull --ff-only'
+git -C "$main" add dirty.txt
+run block "$main" 'git pull --ff-only'
 
 printf '%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" = 0 ]
