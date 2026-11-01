@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Blocks file edits and checkout-changing git commands in a Main checkout with the `### Worktrees` rule (ADR 0004).
 # Shell redirections into the checkout are not caught: the AGENTS.md rule covers those.
+# Read-only git and `git fetch` pass. `git pull --ff-only` passes only on the default branch with a clean tree, so a release can level the checkout with origin.
 
 [ "${SDLC_ALLOW_MAIN_CHECKOUT:-}" = 1 ] && exit 0
 
@@ -72,15 +73,27 @@ changes_checkout() {
       for a in "$@"; do case "$a" in --dry-run) return 1 ;; --*) ;; -*n*) return 1 ;; esac; done
       return 0 ;;
     checkout) [ $# -gt 0 ] ;;
-    merge|pull)
+    merge)
       for a in "$@"; do [ "$a" = --ff-only ] && return 1; done
       return 0 ;;
+    pull) return 0 ;;
     stash) case "${1:-}" in list|show) return 1 ;; esac; return 0 ;;
     apply)
       for a in "$@"; do case "$a" in --apply) return 0 ;; --check|--stat|--numstat|--summary) return 1 ;; esac; done
       return 0 ;;
     *) return 1 ;;
   esac
+}
+
+# Whether the checkout at $1 is on its default branch with nothing uncommitted.
+clean_on_default() {
+  local branch default
+  branch="$(git -C "$1" symbolic-ref --short -q HEAD)" || return 1
+  default="$(git -C "$1" symbolic-ref --short -q refs/remotes/origin/HEAD 2>/dev/null)"
+  default="${default#origin/}"
+  if [ -n "$default" ]; then [ "$branch" = "$default" ] || return 1
+  else case "$branch" in main|master) ;; *) return 1 ;; esac; fi
+  [ -z "$(git -C "$1" status --porcelain 2>/dev/null)" ]
 }
 
 check_git() {
@@ -94,10 +107,17 @@ check_git() {
       *) break ;;
     esac
   done
-  [ $# -gt 0 ] && changes_checkout "$@" || return 0
+  [ $# -gt 0 ] || return 0
+  local ff_pull=0 a
+  if [ "$1" = pull ]; then
+    for a in "$@"; do [ "$a" = --ff-only ] && ff_pull=1; done
+    for a in "$@"; do case "$a" in --rebase*|-r|--no-ff|--squash) ff_pull=0 ;; esac; done
+  fi
+  [ "$ff_pull" = 1 ] || changes_checkout "$@" || return 0
   main="$(guarded_main "$dir")" || return 0
   # A linked worktree has its own git dir; only the Main checkout's git dir is the common dir.
   [ "$(git -C "$dir" rev-parse --absolute-git-dir 2>/dev/null)" = "$(git -C "$dir" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" ] || return 0
+  [ "$ff_pull" = 1 ] && clean_on_default "$dir" && return 0
   block "git $1" "$main"
 }
 
