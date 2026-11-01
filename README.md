@@ -72,6 +72,8 @@ Without sub-agents, `review-changes` runs its three reviews one after another, `
 
 ## Skill types
 
+Each type has its own folder under `skills/`: `commands/`, `auto/` and `reference/`. The installers flatten them, so you see every skill by name.
+
 | Type | Triggered by | Skills |
 |---|---|---|
 | Command | You, by typing it | setup-sdlc, check-sdlc, update-design, deslop, grill-with-docs, to-spec, to-tickets, refresh-spec, implement, implement-spec, triage, improve-codebase-architecture, retro, handoff |
@@ -185,7 +187,7 @@ The check itself is `hooks/comment-slop.pl`, which reads any unified diff. The C
 
 ## Credits and upstream
 
-Forked from [mattpocock/skills](https://github.com/mattpocock/skills) at `d81f3a183412e71a5b1e84ca21bc1a35eea03a60` (2026-10-03), then trimmed to the skills above, flattened and renamed. The `pr` skill's summary visuals come from Dex Horthy's `show-me` skill (see [skills/pr/CREDITS.md](./skills/pr/CREDITS.md)).
+Forked from [mattpocock/skills](https://github.com/mattpocock/skills) at `d81f3a183412e71a5b1e84ca21bc1a35eea03a60` (2026-10-03), then trimmed to the skills above, flattened and renamed. The `pr` skill's summary visuals come from Dex Horthy's `show-me` skill (see [skills/auto/pr/CREDITS.md](./skills/auto/pr/CREDITS.md)).
 
 This repo no longer merges from upstream. To port an upstream improvement to a skill kept here:
 
@@ -194,9 +196,9 @@ git fetch upstream
 git diff d81f3a1 upstream/main -- skills/<bucket>/<name>/   # upstream still uses bucket folders
 ```
 
-Apply what's worth keeping to `skills/<name>/` by hand, then re-check the skill for references to skills that don't exist here.
+Apply what's worth keeping to `skills/<type>/<name>/` by hand, then re-check the skill for references to skills that don't exist here.
 
-`ui-design` is Anthropic's `frontend-design` skill (Apache 2.0) from [anthropics/skills](https://github.com/anthropics/skills) at `ca45fc496a3436251f191354091d557da31c15b5`, copied word for word with a section added for `DESIGN.md`, the spec flow and review. Its [CREDITS.md](./skills/ui-design/CREDITS.md) says how to port a later change.
+`ui-design` is Anthropic's `frontend-design` skill (Apache 2.0) from [anthropics/skills](https://github.com/anthropics/skills) at `ca45fc496a3436251f191354091d557da31c15b5`, copied word for word with a section added for `DESIGN.md`, the spec flow and review. Its [CREDITS.md](./skills/auto/ui-design/CREDITS.md) says how to port a later change.
 
 The slop rules are ported and adapted from [miqdadbadjuber/anti-slop](https://github.com/miqdadbadjuber/anti-slop) (MIT) at `91f12ec67e9de6043cfd93b846404986ba73c3f4`, and each ported skill carries its own `CREDITS.md`. This repo never merges from anti-slop either: to port a later change, diff anti-slop from that commit and apply what's worth keeping by hand.
 

@@ -9,7 +9,7 @@ Each row gives the fix and its kind:
 - **user-only**: needs `sudo`, a secret, the user's own checkout, or a command the guardrail blocks for agents. Never run it: list the exact command for the user.
 - **setup choice**: the fix would change a decision `setup-sdlc` asked the user to make. Never offered: point to the named section.
 
-`<main>` is the **Main checkout**, `<default>` the default branch, `<pinned>` the version on the `- Portless:` line of `docs/agents/dev-stack.md` (format in `skills/dev-stack/CONTRACT.md`), `<wt>` the path of `skills/worktrees/scripts/worktree.sh`. Setup sections are those of `setup-sdlc`: A Issue tracker, B Triage labels, C Domain docs, D Design direction, E CI review, F Worktrees, G Portless, H Dev stack, and step 4, Write, for the `## Agent skills` block.
+`<main>` is the **Main checkout**, `<default>` the default branch, `<pinned>` the version on the `- Portless:` line of `docs/agents/dev-stack.md` (format in `skills/auto/dev-stack/CONTRACT.md`), `<wt>` the path of `skills/auto/worktrees/scripts/worktree.sh`. Setup sections are those of `setup-sdlc`: A Issue tracker, B Triage labels, C Domain docs, D Design direction, E CI review, F Worktrees, G Portless, H Dev stack, and step 4, Write, for the `## Agent skills` block.
 
 ## Setup
 

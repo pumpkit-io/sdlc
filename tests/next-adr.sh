@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Drives skills/domain-modeling/scripts/next-adr.sh against scratch repos and checks the numbers it claims.
+# Drives skills/auto/domain-modeling/scripts/next-adr.sh against scratch repos and checks the numbers it claims.
 # Usage: tests/next-adr.sh. Scratch repos go under $TMPDIR.
 set -u
 
-script="$(cd "$(dirname "$0")/.." && pwd)/skills/domain-modeling/scripts/next-adr.sh"
+script="$(cd "$(dirname "$0")/.." && pwd)/skills/auto/domain-modeling/scripts/next-adr.sh"
 scratch="$(mktemp -d "${TMPDIR:-/tmp}/next-adr-test.XXXXXX")"
 trap 'rm -rf "$scratch"' EXIT
 . "$(dirname "$0")/lib.sh"
