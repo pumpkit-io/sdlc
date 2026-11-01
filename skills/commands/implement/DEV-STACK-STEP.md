@@ -6,4 +6,4 @@ The repo has a **Dev stack contract** and the change is reachable over HTTP or U
 2. Verify the change at its **Dev URL** with the strongest check the skill lists.
 3. Leave the stack running for the user.
 
-The closing report ends with the `dev-stack` skill's `Dev URL:` and `Checked there:` lines.
+The Run report carries the `dev-stack` skill's `Dev URL:` and `Checked there:` lines.

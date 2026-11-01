@@ -1,0 +1,3 @@
+interface:
+  display_name: "Run Report"
+  short_description: "The fixed shape of an implementing run's last message"

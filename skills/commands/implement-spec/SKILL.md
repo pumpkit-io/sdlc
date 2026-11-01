@@ -46,8 +46,8 @@ Communication to and from subagents should be sparse. Communicate primarily thro
 
 9. Push the integration branch, its only push, and open a PR when the run finished clean: every ticket merged, the full suite and typechecking pass on the integration branch, the e2e run passed when step 8 ran, the last `review-changes` verdict from step 7 is `pass`, and no decision waits on the user.
    - **Clean:** load the `pr` skill and open the PR as its "Opening the PR" section says, as complete work, naming the spec and every ticket as the issues it closes. When the issue tracker doesn't live on the code host (a local tracker), or the `pr` skill's host check opened no PR, resolve each ticket the way the issue tracker closes work.
-   - **Not clean:** push nothing, leave every ticket open, and end the report with what blocks it.
+   - **Not clean:** push nothing and leave every ticket open.
 
-10. Finish every implementer and merger worktree through the `worktrees` skill's Finish rules, with `worktree.sh finish <path> --merged-into <integration branch>`: their branches are merged into the integration branch, not yet into the default branch. In a repo with a contract, the script destroys each one's Dev stack before it removes the worktree. Relay any worktree it leaves and why.
+10. Finish every implementer and merger worktree through the `worktrees` skill's Finish rules, with `worktree.sh finish <path> --merged-into <integration branch>`: their branches are merged into the integration branch, not yet into the default branch. In a repo with a contract, the script destroys each one's Dev stack before it removes the worktree. Keep any worktree it leaves, and why, for the Run report.
 
-11. Report the integration branch, the feature worktree's path and the PR link, then release this session's worktree lock, as the `worktrees` skill's Release section says. When step 8 ran, the report ends with the integration stack's `Dev URL:` and `Checked there:` lines.
+11. Release this session's worktree lock, as the `worktrees` skill's Release section says. Then load the `run-report` skill and end with the Run report: the integration branch and the feature worktree go under Links, and when step 8 ran, the integration stack's `Dev URL:` and `Checked there:` lines go in it.
