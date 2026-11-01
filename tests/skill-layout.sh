@@ -28,4 +28,13 @@ check "the manifest lists each skill once, by its path" "$(printf '%s' "$found" 
 stray="$(find "$root/skills" -maxdepth 2 -name SKILL.md)"
 check "no skill sits directly under skills/<type>/ without its own folder" "" "$stray"
 
+echo "# retired terms"
+retired="integration branch"
+planted="$(mktemp -d)"
+mkdir -p "$planted/skills/auto/planted"
+printf 'Merge each Ticket into the %s.\n' "$retired" > "$planted/skills/auto/planted/SKILL.md"
+check "the check sees a planted retired term" "skills/auto/planted/SKILL.md" "$(cd "$planted" && grep -rli "$retired" skills)"
+rm -rf "$planted"
+check "no skill names the retired term" "" "$(cd "$root" && grep -rli "$retired" skills)"
+
 [ "$failures" -eq 0 ]

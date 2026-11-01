@@ -18,7 +18,7 @@ Load the `worktrees` skill and resolve the worktree for this work before writing
 
 3. When the feature has a UI, load the `ui-design` skill. Take the design plan settled in the conversation; when there is none, make one now, planning only, with its open choices recorded as open questions.
 
-4. Load the `prose-style` skill. Write the spec in that style using the template below, keeping the Implementation flow section last and as the placeholder it shows, then publish it to the project issue tracker. The body starts with the **Feature branch link**, `Branch: <branch>`, naming the branch this session's worktree is on (`git branch --show-current` there). Apply the `ready-for-agent` triage label - no need for additional triage.
+4. Load the `prose-style` skill. Write the spec in that style using the template below, keeping the Implementation flow section last and as the placeholder it shows, then publish it to the project issue tracker. The body starts with the **Feature branch link**, `Branch: <branch>`, naming the branch this session's worktree is on (`git branch --show-current` there). Apply the `ready-for-agent` triage label, no need for additional triage.
 
 <spec-template>
 

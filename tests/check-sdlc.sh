@@ -221,12 +221,4 @@ out="$(run "$stack" "$scratch/bin:$no_portless_path")"
 check "devstack.script warns" "warn" "$(status devstack.script "$out")"
 contains "names the mismatch" "PROXY_PORT=443" "$(detail devstack.script "$out")"
 
-echo "# retired terms"
-repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-retired="integration branch"
-mkdir -p "$scratch/skills/auto/planted"
-printf 'Merge each Ticket into the %s.\n' "$retired" > "$scratch/skills/auto/planted/SKILL.md"
-check "the check sees a planted retired term" "skills/auto/planted/SKILL.md" "$(cd "$scratch" && grep -rli "$retired" skills)"
-check "no skill names the retired term" "" "$(cd "$repo_root" && grep -rli "$retired" skills)"
-
 finish_tests

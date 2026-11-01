@@ -9,7 +9,7 @@ Load the `worktrees` skill and resolve the worktree for this work before writing
 A Ticket with a `Stacks on:` line is one pull request of a **Stack**, so it gets its own worktree instead of the Feature worktree:
 
 1. Name the predecessor's branch. A `Stacks on:` naming a Ticket means the branch `<feature-slug>-t<ticket>`, where the feature slug is the Slug of the Ticket's Feature branch link (`worktree.sh slug <branch>`). A `Stacks on:` naming the feature branch or `main` means that branch.
-2. Run `git fetch origin` and check that the predecessor's branch is on `origin` (`git ls-remote --exit-code --heads origin <branch>`). When it is not, stop and say so: name the branch, the Ticket whose pull request has to be pushed first, and that nothing was built.
+2. Run `git fetch origin` and check that the predecessor's branch is on `origin` (`git ls-remote --exit-code --heads origin <branch>`). When it is not, stop and say so: name the branch, the Ticket whose pull request has to be pushed first (for the feature branch, pull request 0, run `implement-spec` or push the feature branch and open that pull request), and that nothing was built.
 3. Run `worktree.sh create <feature-slug>-t<ticket> origin/<predecessor branch>` as the `worktrees` skill's Create section says, and work there. Confirm the branch sits on that base before writing anything.
 
 Implement the work from its source:
@@ -31,7 +31,7 @@ Commit your work to the worktree's branch.
 
 Then push, the run's only push, and open a PR when the run finished clean: the full suite and typechecking pass, the dev stack check passed when it ran, the last `review-changes` verdict is `pass` (fix blocking findings and review again), and no decision waits on the user. Load the `pr` skill and open the PR as its "Opening the PR" section says. The PR is always complete, never a draft.
 
-- **A Ticket with `Stacks on:`**: pass the predecessor's branch as the base, the Ticket as the only issue it closes, and the **Stack** for the stack table, read from the Spec's Implementation flow. The Spec closes with the top pull request only, so name it only when this Ticket is the last one in the flow.
+- **A Ticket with `Stacks on:`**: pass the predecessor's branch as the base, the Ticket as the only issue it closes, and the **Stack** for the stack table, read from the Spec's Implementation flow. The Spec closes with the top pull request only, so name it only when this Ticket is the last one in the flow and you run it by hand. Under `implement-spec`, the top pull request closes the Spec instead.
 - **Any other work**: no base, so the PR targets the default branch. Name the Spec and Tickets the work came from as the issues it closes (none for work from the conversation).
 
 When the run didn't finish clean, push nothing.
