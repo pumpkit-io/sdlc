@@ -451,4 +451,23 @@ check "up fails" "1" "$code"
 contains "and says why" "the google Emulator exited before it answered" "$err"
 stack "$with_portless" destroy >/dev/null 2>&1
 
+echo "# a strategy B Emulator removed from EMULATORS between up and down"
+wt="$be/.claude/worktrees/signin"
+stack "$with_portless" up >/dev/null 2>&1
+sed -i.bak 's|^EMULATORS=(.*)$|EMULATORS=("google /.well-known/openid-configuration")|' "$wt/scripts/dev-stack"
+stack "$with_portless" down >/dev/null 2>&1
+check "down removes every route up added" "" "$(ls "$fake/aliases" | grep '^signin\.')"
+mv "$wt/scripts/dev-stack.bak" "$wt/scripts/dev-stack"
+stack "$with_portless" destroy >/dev/null 2>&1
+
+echo "# a strategy B emulator_env line for a service missing from EMULATORS"
+sed -i.bak 's|^EMULATORS=(.*)$|EMULATORS=("google /.well-known/openid-configuration")|' "$wt/scripts/dev-stack"
+rm -f "$fake/events"
+err="$(stack "$with_portless" up 2>&1 >/dev/null)"; code=$?
+mv "$wt/scripts/dev-stack.bak" "$wt/scripts/dev-stack"
+check "up fails" "1" "$code"
+contains "and says why" "stripe is not in EMULATORS" "$err"
+check "before Compose starts" "" "$(events 'compose up')"
+stack "$with_portless" destroy >/dev/null 2>&1
+
 finish_tests

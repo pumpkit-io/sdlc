@@ -97,10 +97,11 @@ services:
       GOOGLE_API_URL: ${GOOGLE_API_URL:-}
 ```
 
-- `up` starts the `emulate` service first, reads each published port with `docker compose port` and runs `portless alias <slug>.<service>.emulate.<project> <port> --force`, this worktree's own route. It waits until each Emulator answers on its route, then starts the rest of the project.
+- `up` starts the `emulate` service first, reads each published port with `docker compose port` and runs `portless alias <slug>.<service>.emulate.<project> <port> --force`, which gives this worktree its own route. It waits until each Emulator answers on its route, then starts the rest of the project.
 - The browser-facing URL is the route's URL, which `--base-url` also makes the token issuer. The server-to-server URL is `http://emulate:<container port>` (`b_emulator_api_url <service>`). The discovery document advertises the route, which a container can't reach, so the app configures its token, userinfo and JWKS endpoints explicitly from the server-to-server URL.
 - A webhook target is the web service's Compose address, `http://web:<port>/<path>`.
-- `down` and `destroy` remove the Emulator aliases with the web route.
+- `up` records each alias it registers under `.sdlc/dev-stack/`, and `down` and `destroy` remove those with the web route, so an Emulator dropped from `EMULATORS` between `up` and `down` leaves no alias behind.
+
 ## The dev stack doc
 
 `setup-sdlc` writes `docs/agents/dev-stack.md` in this format. `check-sdlc` reads the field lines by their exact `- <Field>: ` prefix, so keep each on one line.
@@ -163,4 +164,4 @@ Chrome, Firefox, Edge, `curl` and Node's `fetch` resolve `*.localhost` on their 
 - `--host 0.0.0.0` lets a container publish it. One process serves several services on `--port` upward, in `--service` order, unless the config gives a service its own `port`.
 - It finds `emulate.config.{ts,mts,js,mjs,yaml,yml,json}` in the repo root on its own.
 - `--generated-secrets-file` refuses a file that exists and leaves it behind on exit, so `up` deletes it before starting the Emulator.
-- It delivers webhooks for Stripe, GitHub, Slack, Linear and Resend, and has no official Docker image.
+- It delivers webhooks for Stripe, GitHub, Slack, Linear and Resend.
