@@ -379,26 +379,30 @@ else
     emit devstack.script pass "scripts/dev-stack"
   fi
   emulate_pin="$(field Emulate)"
+  pin_file=
   if [ -z "$emulate_pin" ]; then
     emit devstack.emulate-version skip "The dev stack doc has no '- Emulate:' line."
   elif [ "$(field Strategy)" = B ]; then
-    got="$(sed -n 's/^RUN npm .*emulate@\([^[:space:]]*\).*$/\1/p' "$top/emulate.Dockerfile" 2>/dev/null | head -n 1)"
-    if [ -z "$got" ]; then
-      emit devstack.emulate-version warn "Strategy B and no emulate.Dockerfile pins emulate; the dev stack doc pins $emulate_pin."
-    elif [ "$got" = "$emulate_pin" ]; then
-      emit devstack.emulate-version pass "emulate.Dockerfile pins $got, as the doc does."
-    else
-      emit devstack.emulate-version warn "emulate.Dockerfile pins emulate $got; the dev stack doc pins $emulate_pin."
-    fi
+    pin_file=emulate.Dockerfile
+    no_pin="Strategy B and no emulate.Dockerfile pins emulate"
+    got="$(tr -d '\r' < "$top/emulate.Dockerfile" 2>/dev/null |
+      sed -nE 's/^RUN npm .*emulate@([0-9][0-9A-Za-z.+-]*).*$/\1/p' | head -n 1)"
+  elif [ ! -e "$dev_script" ]; then
+    emit devstack.emulate-version skip "No scripts/dev-stack."
   else
-    got="$(sed -n 's/^EMULATE_VERSION="\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' "$dev_script" 2>/dev/null | head -n 1)"
-    if [ -z "$got" ]; then
-      emit devstack.emulate-version warn "scripts/dev-stack sets no EMULATE_VERSION; the dev stack doc pins $emulate_pin."
-    elif [ "$got" = "$emulate_pin" ]; then
-      emit devstack.emulate-version pass "scripts/dev-stack pins $got, as the doc does."
-    else
-      emit devstack.emulate-version warn "scripts/dev-stack pins emulate $got; the dev stack doc pins $emulate_pin."
-    fi
+    pin_file=scripts/dev-stack
+    no_pin="scripts/dev-stack sets no EMULATE_VERSION"
+    got="$(tr -d '\r' < "$dev_script" 2>/dev/null |
+      sed -nE "s/^[[:space:]]*(export[[:space:]]+)?EMULATE_VERSION=[\"']?([0-9][0-9A-Za-z.+-]*)[\"']?[[:space:]]*(#.*)?$/\2/p" | head -n 1)"
+  fi
+  if [ -z "$pin_file" ]; then
+    :
+  elif [ -z "$got" ]; then
+    emit devstack.emulate-version warn "$no_pin; the dev stack doc pins $emulate_pin."
+  elif [ "$got" = "$emulate_pin" ]; then
+    emit devstack.emulate-version pass "$pin_file pins $got, as the doc does."
+  else
+    emit devstack.emulate-version warn "$pin_file pins emulate $got; the dev stack doc pins $emulate_pin."
   fi
   if [ ! -x "$dev_script" ]; then
     :
@@ -434,7 +438,7 @@ else
     emit stacks.cap skip "jq is not on PATH."
   else
     stacks="$(jq -r '.[].hostname' "$state_dir/routes.json" 2>/dev/null | sed 's/\.localhost$//' |
-      awk -F . '{ k = NF == 3 && $2 == "emulate" ? $3 : NF > 2 ? $1 "." $NF : $0 } !seen[k]++ { print k }')"
+      awk -F . '{ if (NF == 3 && $2 == "emulate") k = $3; else if (NF > 2) k = $1 "." $NF; else k = $0 } !seen[k]++ { print k }')"
     running="$(printf '%s' "$stacks" | grep -c .)"
     if [ "$running" -gt "$cap" ]; then
       emit stacks.cap warn "$running stacks running on this machine; the cap is $cap: $(printf '%s' "$stacks" | tr '\n' ' ')"
