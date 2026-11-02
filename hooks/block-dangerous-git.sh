@@ -120,6 +120,11 @@ check_portless() {
     run)
       for a in "$@"; do
         [ "$a" = "--force" ] && block 'portless run --force' "It takes over a route another worktree may own. Start your stack through the repo's dev stack contract, which names the route after this worktree."
+      done
+      # The wrapped command, direct or through a launcher, starts at any word naming emulate.
+      while [ $# -gt 0 ]; do
+        a="$1"; shift
+        case "$a" in emulate|emulate@*|*/emulate) check_emulate "$@"; return ;; esac
       done ;;
   esac
 }
@@ -128,7 +133,7 @@ check_emulate() {
   local a
   for a in "$@"; do
     case "$a" in
-      --portless|--portless=*) block "emulate --portless" "It registers machine-wide routes with --force, which override another worktree's. Start Emulators through the repo's dev stack contract, which routes them after this worktree." ;;
+      --portless|--portless=*) block "emulate --portless" "It registers machine-wide routes with --force, which override another worktree's. Start Emulators through the repo's dev stack contract, which names their routes after this worktree." ;;
     esac
   done
 }
