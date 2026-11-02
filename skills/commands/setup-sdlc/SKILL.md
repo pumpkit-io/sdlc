@@ -15,7 +15,7 @@ Scaffold the per-repo configuration that the engineering skills assume:
 - **Code comments**: a line in `AGENTS.md` so every session, in any flow, writes comments by the `code-comments` skill
 - **CI review**: a GitHub Actions workflow that checks every pull request for comment slop and runs `review-changes` on it, only on GitHub
 - **Worktrees**: the files and install command every new **Worktree** gets, the gitignore entries, and the `AGENTS.md` rule that keeps sessions out of the **Main checkout**
-- **Portless and the dev stack**: only when the repo has a runnable app, Portless and its proxy on this machine, the dev stack doc with an Emulator for each third-party provider the user accepts, and either a drafted `scripts/dev-stack` or one issue to make the app worktree-safe
+- **Portless and the dev stack**: only when the repo has a runnable app, Portless and its proxy on this machine, the dev stack doc with an Emulator for each third-party provider the user accepts, and a drafted `scripts/dev-stack`, one issue to make the app worktree-safe, or, when the user declines that issue with blockers remaining, neither, with the report naming the blockers
 
 This is a prompt-driven skill, not a deterministic script. Explore, present what you found, confirm with the user, then write on a `chore/setup-sdlc` worktree and finish with the `check-sdlc` checklist.
 
