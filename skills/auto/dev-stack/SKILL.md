@@ -32,7 +32,7 @@ Check the change at the Dev URL with the strongest check available, in this orde
 3. A headless browser script (Playwright, for one) run against the Dev URL.
 4. HTTP requests (`curl`) to each route the change touches, checking status codes and bodies.
 
-When the doc lists Emulators, a check can also confirm an outside effect of the change (the email went out, the charge exists) by reading the Emulator's state over HTTP or in the browser: request the inspect path its doc entry names on this worktree's own Emulator route, `<service>.emulate.<project>` with the Slug prefix in a linked worktree, whose URL `portless get <service>.emulate.<project>` prints when run from the worktree.
+When the doc lists Emulators, a check can also confirm an outside effect of the change (the email went out, the charge exists) by reading the Emulator's state over HTTP or in the browser: request the inspect path its doc entry names at the URL `portless get <service>.emulate.<project>` prints from the worktree.
 
 Take a screenshot of each UI change at the Dev URL when a browser tool or headless script is available, and save it under `.sdlc/dev-stack/screenshots/`.
 
@@ -46,7 +46,7 @@ Done when every change reachable over HTTP or UI has been checked at the Dev URL
 
 Leave the stack running.
 
-An Emulator can drift from the real provider's API. So for each provider the change touched whose check relied on an Emulator (read its state, or signed in or got a webhook through it), write one **real-provider item**: try the flows you checked against the real provider before release, and what breaks in production if that is skipped. Write one item per provider, however many checks used its Emulator.
+An Emulator can drift from the real provider's API. So for each provider that the change touched and whose behaviour a check confirmed only through its Emulator (read its state, or signed in or got a webhook through it), write one **real-provider item**: try the flows you checked against the real provider before release, and what breaks in production if that is skipped. Write one item per provider, however many checks used its Emulator. An e2e sign-in through the Google Emulator on a change that never touched auth adds no item.
 
 These two lines report the checks:
 
@@ -55,7 +55,7 @@ Dev URL: <Dev URL> (running)
 Checked there: <checks run and their result, Emulators read, screenshot paths>
 ```
 
-With a calling skill, hand it the real-provider items for its "Before merging" section, and in a Run report put the two lines where the `run-report` skill says. With no calling skill, end the report with the two lines, followed by the real-provider items as its last part.
+With a calling skill that writes a Run report, hand it the real-provider items for its "Before merging" section and put the two lines where the `run-report` skill says. A calling skill without a Run report lists the items at the end of its own report. With no calling skill, end the report with the two lines, followed by the real-provider items as its last part.
 
 ## Boundaries
 

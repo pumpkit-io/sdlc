@@ -7,7 +7,7 @@ Mock at **system boundaries** only:
 - Time/randomness
 - File system (sometimes)
 
-When the repo's dev stack doc lists an Emulator for a provider, integration and e2e tests that run against the Dev stack use that Emulator, a stateful stand-in that keeps the charges and users a test created, in place of a hand-written mock; otherwise the rules on this page apply.
+For a provider `emulate` covers, an Emulator beats a hand-written mock in integration and e2e tests, because the real HTTP client runs against a stand-in that keeps the charges and users a test created: e2e tests use the Dev stack's Emulator when the dev stack doc lists one, and an integration test can start one in its own setup, which the harness doesn't require.
 
 Don't mock:
 
