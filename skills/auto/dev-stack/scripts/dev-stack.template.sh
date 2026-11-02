@@ -25,7 +25,8 @@ EMULATE_VERSION="0.13.0"
 
 # The variables the app reads each Emulator's URLs from, and an Emulator's webhook target and signing secret.
 emulator_env() {
-  # export GOOGLE_ISSUER="$(emulator_url google)"
+  # Assign before export: export would hide a failed emulator_url from set -e.
+  # GOOGLE_ISSUER=$(emulator_url google); export GOOGLE_ISSUER
   # export STRIPE_WEBHOOK_URL="$DEV_URL/api/webhooks/stripe" STRIPE_WEBHOOK_SECRET="whsec_dev"
   :
 }
@@ -174,7 +175,13 @@ a_service_pid() {
 
 a_service_alive() { a_service_pid "$1" >/dev/null; }
 
-a_alive() { a_service_alive web; }
+a_alive() {
+  local e
+  a_service_alive web || return 1
+  for e in ${EMULATORS[@]+"${EMULATORS[@]}"}; do
+    a_service_alive "emulate-${e%% *}" || return 1
+  done
+}
 
 a_start_service() {
   local svc=$1 name=$2 pid
@@ -218,32 +225,32 @@ a_postgres() {
 a_migrate() { node scripts/migrate.js; }
 a_seed() { node scripts/seed.js; }
 
-# Parallel first runs on a cold cache collide in npm's cache, so one fetch runs at a time on the machine.
-# The lock is a symlink to its holder's pid, so it never exists without one.
+# Parallel first runs on a cold cache collide in npm's cache, so one fetch runs at a time per cache.
+# The lock is a flock the kernel drops when its holder exits, so a dead up never leaves it held.
 a_emulate_fetch() {
-  local lock="${TMPDIR:-/tmp}/sdlc-emulate-fetch.lock" holder taken deadline=$((SECONDS + 600))
-  until ln -sn "$$" "$lock" 2>/dev/null; do
-    holder=$(readlink "$lock" 2>/dev/null || true)
-    if [ -n "$holder" ] && ! kill -0 "$holder" 2>/dev/null; then
-      # Only one waiter's rename succeeds; one that grabbed a live lock taken over meanwhile puts it back.
-      taken="$lock.stale.$$"
-      if mv "$lock" "$taken" 2>/dev/null; then
-        holder=$(readlink "$taken" 2>/dev/null || true)
-        if [ -n "$holder" ] && kill -0 "$holder" 2>/dev/null; then
-          ln -sn "$holder" "$lock" 2>/dev/null || true
-        fi
-        rm -f "$taken"
-      fi
-      continue
-    fi
-    [ "$SECONDS" -ge "$deadline" ] && die "another up has held $lock for 600s; remove it if no up is running"
-    sleep 1
-  done
-  local fetched=0
-  npx --yes "emulate@$EMULATE_VERSION" --version </dev/null >/dev/null 2>&1 && fetched=1
-  # A lock another up took over is theirs now.
-  [ "$(readlink "$lock" 2>/dev/null)" = "$$" ] && rm -f "$lock"
-  [ "$fetched" = 1 ] || die "could not fetch emulate@$EMULATE_VERSION through npx"
+  local lock=${DEV_STACK_FETCH_LOCK:-} cache code=0
+  if [ -z "$lock" ]; then
+    cache=$(npm config get cache 2>/dev/null </dev/null || true)
+    lock="${cache:-$HOME/.npm}/_sdlc-emulate-fetch.lock"
+  fi
+  mkdir -p "$(dirname "$lock")"
+  local fetch=(npx --yes "emulate@$EMULATE_VERSION" --version)
+  if command -v perl >/dev/null; then
+    perl -MFcntl=:flock -e '
+      open(my $f, ">>", shift) or exit 4;
+      my $deadline = time + shift;
+      until (flock($f, LOCK_EX | LOCK_NB)) { exit 3 if time >= $deadline; sleep 1 }
+      exit(system(@ARGV) == 0 ? 0 : 1);
+    ' "$lock" 600 "${fetch[@]}" </dev/null >/dev/null 2>&1 || code=$?
+  else
+    "${fetch[@]}" </dev/null >/dev/null 2>&1 || code=$?
+  fi
+  case "$code" in
+    0) ;;
+    3) die "another up has held $lock for 600s" ;;
+    4) die "could not open $lock" ;;
+    *) die "could not fetch emulate@$EMULATE_VERSION through npx" ;;
+  esac
 }
 
 # For a config that leaves generated keys out, add --generated-secrets-file "$secrets"; emulate refuses an existing file, so up deletes it first.

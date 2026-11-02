@@ -41,7 +41,7 @@ Each skill script has a test script that drives it against scratch repos under `
 - `skills/auto/worktrees/scripts/worktree.sh`: `tests/worktrees.sh`
 - `skills/auto/domain-modeling/scripts/next-adr.sh`: `tests/next-adr.sh`
 - `skills/commands/check-sdlc/scripts/check.sh`: `tests/check-sdlc.sh`
-- `skills/auto/dev-stack/scripts/dev-stack.template.sh`: `tests/dev-stack.sh`, against fake `portless`, `docker`, `curl` and `node`, so it touches no real proxy or container.
+- `skills/auto/dev-stack/scripts/dev-stack.template.sh`: `tests/dev-stack.sh`, against fake `portless`, `docker`, `curl`, `node`, `npm` and `npx`, so it touches no real proxy or container.
 - The skill layout: `tests/skill-layout.sh` checks that each skill's folder matches its frontmatter type and that the manifest lists every skill once.
 
 Skills that cannot work without per-repo config point to `/setup-sdlc`; the others degrade silently. See `docs/adr/0001-explicit-setup-pointer-only-for-hard-dependencies.md`.
