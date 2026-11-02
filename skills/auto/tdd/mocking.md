@@ -7,7 +7,7 @@ Mock at **system boundaries** only:
 - Time/randomness
 - File system (sometimes)
 
-For a provider `emulate` covers, integration and e2e tests run against its Emulator in the Dev stack: a stateful fake that keeps the charges and users a test created beats a hand-written mock there.
+When the repo's dev stack doc lists an Emulator for a provider, integration and e2e tests that run against the Dev stack use that Emulator, a stateful stand-in that keeps the charges and users a test created, in place of a hand-written mock; otherwise the rules on this page apply.
 
 Don't mock:
 

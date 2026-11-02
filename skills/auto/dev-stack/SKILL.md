@@ -32,7 +32,7 @@ Check the change at the Dev URL with the strongest check available, in this orde
 3. A headless browser script (Playwright, for one) run against the Dev URL.
 4. HTTP requests (`curl`) to each route the change touches, checking status codes and bodies.
 
-When the doc lists Emulators, a check can also confirm an outside effect of the change (the email went out, the charge exists) by reading the Emulator's state over HTTP or in the browser: request the inspect path its doc entry names on its route, which `portless list` shows.
+When the doc lists Emulators, a check can also confirm an outside effect of the change (the email went out, the charge exists) by reading the Emulator's state over HTTP or in the browser: request the inspect path its doc entry names on this worktree's own Emulator route, `<service>.emulate.<project>` with the Slug prefix in a linked worktree, whose URL `portless get <service>.emulate.<project>` prints when run from the worktree.
 
 Take a screenshot of each UI change at the Dev URL when a browser tool or headless script is available, and save it under `.sdlc/dev-stack/screenshots/`.
 
@@ -40,18 +40,22 @@ For an `https://` Dev URL, trust the Portless CA as `CONTRACT.md` describes; an 
 
 When a check fails, read `scripts/dev-stack logs` (it lists one log per service) and then `scripts/dev-stack logs <service>` before forming a theory. Quote only the lines that carry the signal, with secrets written as `<REDACTED>`.
 
-Done when every change reachable over HTTP or UI has been checked at the Dev URL, each outside effect the change causes has been read from its Emulator where the doc lists one, each UI change has its screenshot where one could be taken, and every failure has its log lines.
+Done when every change reachable over HTTP or UI has been checked at the Dev URL, each outside effect a check read from an Emulator has its result, each UI change has its screenshot where one could be taken, and every failure has its log lines.
 
 ## 4. Report
 
-Leave the stack running. End the report with these two lines, or in a Run report, put them where the `run-report` skill says:
+Leave the stack running.
+
+An Emulator can drift from the real provider's API. So for each provider the change touched whose check relied on an Emulator (read its state, or signed in or got a webhook through it), write one **real-provider item**: try the flows you checked against the real provider before release, and what breaks in production if that is skipped. Write one item per provider, however many checks used its Emulator.
+
+These two lines report the checks:
 
 ```
 Dev URL: <Dev URL> (running)
 Checked there: <checks run and their result, Emulators read, screenshot paths>
 ```
 
-An Emulator can drift from the real provider's API. So for each provider the change touched whose check relied on an Emulator (read its state, or signed in or got a webhook through it), hand the calling skill one "Before merging" item: try the flows you checked against the real provider before release, and what breaks in production if that is skipped. One item per provider; with no calling skill, end the report with it.
+With a calling skill, hand it the real-provider items for its "Before merging" section, and in a Run report put the two lines where the `run-report` skill says. With no calling skill, end the report with the two lines, followed by the real-provider items as its last part.
 
 ## Boundaries
 

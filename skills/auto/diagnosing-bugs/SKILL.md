@@ -38,7 +38,7 @@ Spend disproportionate effort here. **Be aggressive. Be creative. Refuse to give
 9. **Differential loop.** Run the same input through old-version vs new-version (or two configs) and diff outputs.
 10. **HITL bash script.** Last resort. If a human must click, drive _them_ with `scripts/hitl-loop.template.sh` so the loop is still structured. Captured output feeds back to you.
 
-When a loop needs a running server and the repo has a **Dev stack contract** (an executable `scripts/dev-stack`), load the `dev-stack` skill to bring up this worktree's stack and point the loop at its **Dev URL**. Read the server's side of each run with `scripts/dev-stack logs <service>`, redacted as above. A loop that crosses a provider the doc lists an **Emulator** for can reset it to its seed between runs with `scripts/dev-stack down` and then `up`, so each run starts from the same provider state.
+When a loop needs a running server and the repo has a **Dev stack contract** (an executable `scripts/dev-stack`), load the `dev-stack` skill to bring up this worktree's stack and point the loop at its **Dev URL**. Read the server's side of each run with `scripts/dev-stack logs <service>`, redacted as above. A loop that crosses a provider the dev stack doc lists an **Emulator** for can reset it to its seed between runs with `scripts/dev-stack destroy` and then `up`, which also reseeds the app's data, so each run starts from the same state on both sides; `down` and then `up` resets only the Emulator, so the app's rows can point at provider objects that no longer exist.
 
 Build the right feedback loop, and the bug is 90% fixed.
 
