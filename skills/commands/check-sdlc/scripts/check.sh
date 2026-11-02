@@ -386,7 +386,7 @@ else
     pin_file=emulate.Dockerfile
     no_pin="Strategy B and no emulate.Dockerfile pins emulate"
     got="$(tr -d '\r' < "$top/emulate.Dockerfile" 2>/dev/null |
-      sed -nE 's/^RUN npm .*emulate@([0-9][0-9A-Za-z.+-]*).*$/\1/p' | head -n 1)"
+      sed -nE 's/^[[:space:]]*RUN([[:space:]]+--[^[:space:]]+)*[[:space:]]+npm .*emulate@([0-9][0-9A-Za-z.+-]*).*$/\2/p' | head -n 1)"
   elif [ ! -e "$dev_script" ]; then
     emit devstack.emulate-version skip "No scripts/dev-stack."
   else

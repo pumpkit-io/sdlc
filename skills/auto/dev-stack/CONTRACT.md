@@ -86,6 +86,7 @@ services:
     build: { context: ., dockerfile: emulate.Dockerfile }
     command: ["start", "--host", "0.0.0.0", "--port", "4000", "--service", "${EMULATE_SERVICES}", "--base-url", "${EMULATE_BASE_URL}"]
     environment:
+      APP_URL: ${APP_URL}
       STRIPE_WEBHOOK_URL: ${STRIPE_WEBHOOK_URL:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     volumes: ["./emulate.config.ts:/emulate/emulate.config.ts:ro"]
@@ -95,11 +96,14 @@ services:
       APP_URL: ${APP_URL}
       GOOGLE_ISSUER: ${GOOGLE_ISSUER:-}
       GOOGLE_API_URL: ${GOOGLE_API_URL:-}
+      STRIPE_API_URL: ${STRIPE_API_URL:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
 ```
 
 - `up` starts the `emulate` service first, reads each published port with `docker compose port` and runs `portless alias <slug>.<service>.emulate.<project> <port> --force`, which gives this worktree its own route. It waits until each Emulator answers on its route, then starts the rest of the project.
 - The browser-facing URL is the route's URL, which `--base-url` also makes the token issuer. The server-to-server URL is `http://emulate:<container port>` (`b_emulator_api_url <service>`). The discovery document advertises the route, which a container can't reach, so the app configures its token, userinfo and JWKS endpoints explicitly from the server-to-server URL.
 - A webhook target is the web service's Compose address, `http://web:<port>/<path>`.
+- The `emulate` service gets `APP_URL` as the web service does, so a TS config can build per-worktree redirect URIs from the Dev URL.
 - `up` records each alias it registers under `.sdlc/dev-stack/`, and `down` and `destroy` remove those with the web route, so an Emulator dropped from `EMULATORS` between `up` and `down` leaves no alias behind.
 
 ## The dev stack doc
@@ -123,7 +127,7 @@ services:
 
 Emulator state resets to its config whenever `up` starts an Emulator, so on the first `up` after `down`.
 
-- Google sign-in: route `google.emulate.pumpkit`; `up` sets `GOOGLE_ISSUER` (browser-facing) and `GOOGLE_API_URL` (server-to-server); no webhooks; `GET /o/oauth2/v2/auth` lists the seeded users; `emulate.config.yaml` seeds the user `test@example.com`.
+- Google sign-in: route `google.emulate.pumpkit`; `up` sets `GOOGLE_ISSUER` (browser-facing) and `GOOGLE_API_URL` (server-to-server); no webhooks; `GET /o/oauth2/v2/auth` lists the seeded users; `emulate.config.ts` seeds the user `test@example.com`.
 - Stripe: route `stripe.emulate.pumpkit`; `up` sets `STRIPE_API_URL`, `STRIPE_WEBHOOK_URL` and `STRIPE_WEBHOOK_SECRET`; delivers webhooks to `http://web:3000/api/webhooks/stripe`; `GET /v1/customers` lists customers; `emulate.config.ts` seeds one product with a monthly price.
 
 ## Safe mode
@@ -146,7 +150,7 @@ Chrome, Firefox, Edge, `curl` and Node's `fetch` resolve `*.localhost` on their 
 - **Cap** is the most stacks running at once on one machine, 4 by default. A Dev stack's Emulators count with it, not as stacks of their own, though each is one more process.
 - **Portless** is the pinned version. **Emulate** is the pinned emulate version; leave the line out when the stack has no Emulators. **Proxy** is the mode, `HTTP on <port>` or `HTTPS on <port>`: `HTTP on 1355` by default, `HTTPS on 443` after the upgrade.
 - **Emulators** has one line saying Emulator state resets to its config whenever `up` starts an Emulator, then one bullet per Emulator: its route, the variables `up` sets, its webhook target if any, the path to inspect its state, and what its config seeds. Leave the section out when the stack has none.
-- **Safe mode** lists each variable `up` sets and what it turns off, naming each provider emulate doesn't cover as a custom-Emulator candidate.
+- **Safe mode** lists each variable `up` sets and what it turns off, naming each provider emulate doesn't cover as a custom-Emulator candidate, and each covered provider with an outside effect left without an Emulator (declined, or accepted with its issue declined) as one emulate 0.13.0 has an Emulator for.
 - **HTTPS upgrade** is present only when the mode is HTTPS.
 - `scripts/dev-stack` repeats `PROJECT`, `PROXY_PORT` and `PROXY_TLS` (1 for HTTPS); `check-sdlc` warns when they disagree with the doc. The Emulate version is repeated as `EMULATE_VERSION` in `scripts/dev-stack` under strategy A, and on `emulate.Dockerfile`'s `RUN npm install -g emulate@<version>` line under strategy B.
 

@@ -301,7 +301,7 @@ check "the PATH has no perl" "" "$(PATH="$no_perl" command -v perl)"
 rm -f "$fake/events"
 err="$(stack "$no_perl" up 2>&1 >/dev/null)"; code=$?
 check "up fails" "1" "$code"
-contains "with a one-line reason" "the Emulate fetch lock needs perl" "$err"
+contains "with a one-line reason" "the emulate fetch lock needs perl" "$err"
 check "and runs nothing through npx" "" "$(events npx)"
 stack "$with_portless" destroy >/dev/null 2>&1
 

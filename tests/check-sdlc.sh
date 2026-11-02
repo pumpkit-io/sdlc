@@ -268,6 +268,9 @@ check "devstack.emulate-version warns on a Dockerfile mismatch" "emulate.Dockerf
 printf 'FROM node:24-slim\r\nRUN npm install -g "emulate@0.13.0"\r\n' > "$emu/emulate.Dockerfile"
 out="$(run "$emu")"
 check "devstack.emulate-version reads a quoted CRLF Dockerfile pin" "pass" "$(status devstack.emulate-version "$out")"
+printf 'FROM node:24-slim\n  RUN --mount=type=cache,target=/root/.npm npm install -g emulate@0.13.0\n' > "$emu/emulate.Dockerfile"
+out="$(run "$emu")"
+check "devstack.emulate-version reads an indented RUN --mount Dockerfile pin" "pass" "$(status devstack.emulate-version "$out")"
 
 echo "# Emulator routes"
 w1="$(cd "$emu" && bash "$worktree" create feat/w1 2>/dev/null | tail -n 1)"

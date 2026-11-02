@@ -246,7 +246,7 @@ a_seed() { node scripts/seed.js; }
 # The lock is a flock the kernel drops when its holder exits, so a dead up never leaves it held.
 a_emulate_fetch() {
   local lock=${DEV_STACK_FETCH_LOCK:-} log="$STATE_DIR/emulate-fetch.log" cache code=0
-  command -v perl >/dev/null || die "the Emulate fetch lock needs perl; install it and run up again"
+  command -v perl >/dev/null || die "the emulate fetch lock needs perl; install it and run up again"
   if [ -z "$lock" ]; then
     cache=$(npm config get cache 2>/dev/null </dev/null || true)
     lock="${cache:-$HOME/.npm}/_sdlc-emulate-fetch.lock"
