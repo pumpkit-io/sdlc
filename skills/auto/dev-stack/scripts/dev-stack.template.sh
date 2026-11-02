@@ -175,13 +175,14 @@ a_service_pid() {
 
 a_service_alive() { a_service_pid "$1" >/dev/null; }
 
-a_alive() {
+a_emulators_alive() {
   local e
-  a_service_alive web || return 1
   for e in ${EMULATORS[@]+"${EMULATORS[@]}"}; do
     a_service_alive "emulate-${e%% *}" || return 1
   done
 }
+
+a_alive() { a_service_alive web && a_emulators_alive; }
 
 a_start_service() {
   local svc=$1 name=$2 pid
@@ -228,28 +229,24 @@ a_seed() { node scripts/seed.js; }
 # Parallel first runs on a cold cache collide in npm's cache, so one fetch runs at a time per cache.
 # The lock is a flock the kernel drops when its holder exits, so a dead up never leaves it held.
 a_emulate_fetch() {
-  local lock=${DEV_STACK_FETCH_LOCK:-} cache code=0
+  local lock=${DEV_STACK_FETCH_LOCK:-} log="$STATE_DIR/emulate-fetch.log" cache code=0
+  command -v perl >/dev/null || die "the Emulate fetch lock needs perl; install it and run up again"
   if [ -z "$lock" ]; then
     cache=$(npm config get cache 2>/dev/null </dev/null || true)
     lock="${cache:-$HOME/.npm}/_sdlc-emulate-fetch.lock"
   fi
-  mkdir -p "$(dirname "$lock")"
-  local fetch=(npx --yes "emulate@$EMULATE_VERSION" --version)
-  if command -v perl >/dev/null; then
-    perl -MFcntl=:flock -e '
-      open(my $f, ">>", shift) or exit 4;
-      my $deadline = time + shift;
-      until (flock($f, LOCK_EX | LOCK_NB)) { exit 3 if time >= $deadline; sleep 1 }
-      exit(system(@ARGV) == 0 ? 0 : 1);
-    ' "$lock" 600 "${fetch[@]}" </dev/null >/dev/null 2>&1 || code=$?
-  else
-    "${fetch[@]}" </dev/null >/dev/null 2>&1 || code=$?
-  fi
+  mkdir -p "$(dirname "$lock")" "$STATE_DIR"
+  perl -MFcntl=:flock -e '
+    open(my $f, ">>", shift) or exit 4;
+    my $deadline = time + shift;
+    until (flock($f, LOCK_EX | LOCK_NB)) { exit 3 if time >= $deadline; sleep 1 }
+    exit(system(@ARGV) == 0 ? 0 : 1);
+  ' "$lock" 600 npx --yes "emulate@$EMULATE_VERSION" --version </dev/null >"$log" 2>&1 || code=$?
   case "$code" in
     0) ;;
     3) die "another up has held $lock for 600s" ;;
     4) die "could not open $lock" ;;
-    *) die "could not fetch emulate@$EMULATE_VERSION through npx" ;;
+    *) die "could not fetch emulate@$EMULATE_VERSION through npx; see $log" ;;
   esac
 }
 
@@ -276,7 +273,8 @@ a_emulators_up() {
   local e
   [ "${#EMULATORS[@]}" -gt 0 ] || return 0
   emulator_env
-  a_emulate_fetch
+  # A running stack skips the fetch, so it never waits behind another worktree's cold fetch.
+  a_emulators_alive || a_emulate_fetch
   for e in "${EMULATORS[@]}"; do a_start_emulator "${e%% *}"; done
   for e in "${EMULATORS[@]}"; do a_wait_emulator "${e%% *}" "${e#* }"; done
 }
