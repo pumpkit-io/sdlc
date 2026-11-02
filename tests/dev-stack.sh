@@ -20,10 +20,12 @@ trap cleanup EXIT
 cat > "$fake/portless-bin/portless" <<EOF
 #!/usr/bin/env bash
 events="$fake/events"
+fake="$fake"
 EOF
 cat >> "$fake/portless-bin/portless" <<'EOF'
 case "$1" in
   get)
+    case "$2" in *.emulate.*) [ -e "$fake/portless-get-fails" ] && exit 1 ;; esac
     prefix=""
     if [ "$(git rev-parse --absolute-git-dir)" != "$(git rev-parse --path-format=absolute --git-common-dir)" ]; then
       b="$(git branch --show-current)"; prefix="${b##*/}."
@@ -79,12 +81,15 @@ esac
 exit 0
 EOF
 # The first call for a package fetches it into $fake/npx-cache, slowly enough for two cold runs to overlap.
+# With $fake/steal-lock holding a pid, the fetch hands the fetch lock to that pid, as a takeover would.
 cat > "$fake/bin/npx" <<EOF
 #!/usr/bin/env bash
 fake="$fake"
+lock="$scratch/sdlc-emulate-fetch.lock"
 EOF
 cat >> "$fake/bin/npx" <<'EOF'
 echo "npx $*" >> "$fake/events"
+if [ -s "$fake/steal-lock" ]; then rm -rf "$lock"; ln -sn "$(cat "$fake/steal-lock")" "$lock"; rm -f "$fake/steal-lock"; fi
 pkg=""
 for a in "$@"; do case "$a" in -*) ;; *) pkg="$a"; break ;; esac; done
 if [ ! -e "$fake/npx-cache/$pkg" ]; then
@@ -117,6 +122,17 @@ check "seeds once" "1" "$(seeds)"
 check "status" "running" "$(stack "$with_portless" status 2>/dev/null)"
 check "with no Emulators nothing runs through npx" "" "$(events npx)"
 check "and the web route is the only one" "run myapp|" "$(events run)"
+check "and the state is the web service's and the seed marker" "seeded web.log web.pid" "$(ls "$wt/.sdlc/dev-stack" | tr '\n' ' ' | sed 's/ $//')"
+
+echo "# no Emulators on down and destroy"
+check "the template ships an empty Emulator list" "1" "$(grep -c '^EMULATORS=()$' "$template")"
+stack "$with_portless" down >/dev/null 2>&1
+check "down leaves the seed marker and the log" "seeded web.log" "$(ls "$wt/.sdlc/dev-stack" | tr '\n' ' ' | sed 's/ $//')"
+stack "$with_portless" destroy >/dev/null 2>&1
+check "destroy leaves no state" "no" "$([ -e "$wt/.sdlc/dev-stack" ] && echo yes || echo no)"
+check "and nothing ran through npx" "" "$(events npx)"
+check "and no fetch lock was taken" "no" "$([ -e "$scratch/sdlc-emulate-fetch.lock" ] || [ -L "$scratch/sdlc-emulate-fetch.lock" ] && echo yes || echo no)"
+stack "$with_portless" up >/dev/null 2>&1
 
 echo "# main checkout names"
 wt="$repo"
@@ -158,7 +174,7 @@ echo "# Emulators"
 emu="$(new_repo emu)"
 mkdir -p "$emu/scripts"
 sed 's|^EMULATORS=()$|EMULATORS=("google /.well-known/openid-configuration" "stripe /v1/customers")|' "$template" > "$emu/scripts/dev-stack"
-check "the template's Emulator list starts empty" "1" "$(grep -c '^EMULATORS=("google' "$emu/scripts/dev-stack")"
+check "the filled-in list names the Emulators" "1" "$(grep -c '^EMULATORS=("google' "$emu/scripts/dev-stack")"
 printf '.sdlc/\n.claude/worktrees/\n' > "$emu/.gitignore"
 git -C "$emu" add -A && git -C "$emu" commit -q -m contract
 git -C "$emu" worktree add -q -b feat/signin "$emu/.claude/worktrees/signin"
@@ -172,7 +188,56 @@ wait "$second"; code2=$?
 check "the first up succeeds" "0" "$code1"
 check "the second up succeeds" "0" "$code2"
 check "the package is fetched once" "emulate@0.13.0" "$(cat "$fake/fetches" 2>/dev/null | tr '\n' ' ' | sed 's/ $//')"
-check "and the fetch lock is released" "no" "$([ -e "$scratch/sdlc-emulate-fetch.lock" ] && echo yes || echo no)"
+check "and the fetch lock is released" "no" "$([ -e "$scratch/sdlc-emulate-fetch.lock" ] || [ -L "$scratch/sdlc-emulate-fetch.lock" ] && echo yes || echo no)"
+stack "$with_portless" destroy >/dev/null 2>&1
+wt="$emu/.claude/worktrees/signin"; stack "$with_portless" destroy >/dev/null 2>&1
+
+echo "# a fetch lock left by a dead up"
+lock="$scratch/sdlc-emulate-fetch.lock"
+rm -rf "$fake/npx-cache" "$fake/fetches" "$lock"
+true & dead=$!; wait "$dead"
+ln -sn "$dead" "$lock"
+wt="$emu/.claude/worktrees/signin"; stack "$with_portless" up >/dev/null 2>&1 & first=$!
+wt="$emu/.claude/worktrees/billing"; stack "$with_portless" up >/dev/null 2>&1 & second=$!
+start=$SECONDS
+wait "$first"; code1=$?
+wait "$second"; code2=$?
+check "two ups waiting on it both succeed" "0 0" "$code1 $code2"
+check "without waiting out the timeout" "yes" "$([ $((SECONDS - start)) -lt 30 ] && echo yes)"
+check "and fetch the package once" "emulate@0.13.0" "$(cat "$fake/fetches" 2>/dev/null | tr '\n' ' ' | sed 's/ $//')"
+check "and leave no lock behind" "" "$(ls -d "$lock"* 2>/dev/null)"
+wt="$emu/.claude/worktrees/billing"; stack "$with_portless" destroy >/dev/null 2>&1
+wt="$emu/.claude/worktrees/signin"; stack "$with_portless" destroy >/dev/null 2>&1
+
+echo "# a fetch lock another up took over"
+rm -rf "$fake/npx-cache" "$fake/fetches"
+sleep 600 & other=$!
+printf '%s\n' "$other" > "$fake/steal-lock"
+stack "$with_portless" up >/dev/null 2>&1
+check "release leaves the other up's lock" "$other" "$(readlink "$lock" 2>/dev/null)"
+kill "$other"; wait "$other" 2>/dev/null
+rm -f "$lock"
+stack "$with_portless" destroy >/dev/null 2>&1
+
+echo "# a malformed Emulator entry"
+bad="$(new_repo bad)"
+mkdir -p "$bad/scripts"
+for entry in '"google"' '"google well-known"'; do
+  sed "s|^EMULATORS=()\$|EMULATORS=($entry)|" "$template" > "$bad/scripts/dev-stack"
+  wt="$bad"
+  err="$(stack "$with_portless" up 2>&1 >/dev/null)"; code=$?
+  check "up refuses $entry" "1" "$code"
+  contains "with a one-line reason" "needs a service and a path that starts with /" "$err"
+done
+check "before starting anything" "" "$(ls "$bad/.sdlc/dev-stack" 2>/dev/null | grep emulate)"
+
+echo "# portless get fails for an Emulator"
+wt="$emu/.claude/worktrees/signin"
+touch "$fake/portless-get-fails"
+err="$(stack "$with_portless" up 2>&1 >/dev/null)"; code=$?
+rm -f "$fake/portless-get-fails"
+check "up fails" "1" "$code"
+contains "and says why" "portless get google.emulate.myapp failed" "$err"
 stack "$with_portless" destroy >/dev/null 2>&1
 
 echo "# up in a linked worktree"

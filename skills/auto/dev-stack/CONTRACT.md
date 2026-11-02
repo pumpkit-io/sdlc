@@ -42,7 +42,7 @@ A third-party service that `emulate` covers runs against an Emulator inside the 
 - **Started first, answering before the app.** `up` starts every Emulator, waits until each answers a request on its route, then starts the app. `down` stops them and removes their routes; `destroy` also deletes their logs and any generated-secrets file under `.sdlc/dev-stack/`.
 - **Pinned exactly.** One emulate version, recorded in the dev stack doc and repeated in the script (A) or the emulate Dockerfile (B).
 - **Throwaway config.** The committed config holds throwaway users only and leaves out `oauth_clients` by default, so the Google Emulator skips `client_id` and `redirect_uri` checks. It switches from YAML to a JS or TS config only for per-worktree values: redirect URIs built from the Dev URL, webhook targets. Never `--watch`.
-- **State resets on every `up`.** Emulators keep state in memory, so the Emulator's config is the only source of the identities and objects the app's own seed refers to. Never store a provider ID created at runtime in the app's seed.
+- **State resets whenever `up` starts an Emulator.** Emulators keep state in memory and nothing persists it, so it resets on the first `up` after `down`; an `up` on a running stack leaves its Emulators, and their keys and sessions, alone. The Emulator's config is the only source of the identities and objects the app's own seed refers to. Never store a provider ID created at runtime in the app's seed.
 - **No off switch in the contract.** A repo may add its own switch for humans to use a provider's real test mode; every run a skill starts uses Emulators.
 - **Extra processes count.** Each Emulator is one more process per Dev stack. The Cap stays as it is, though four Dev stacks with three Emulators each run twelve more Node processes.
 
@@ -86,7 +86,7 @@ In HTTPS mode, server-side calls to an `https://` Emulator URL, and an Emulator 
 
 ## Emulators
 
-Emulator state resets to its config on every `up`.
+Emulator state resets to its config whenever `up` starts an Emulator, so on the first `up` after `down`.
 
 - Google sign-in: route `google.emulate.pumpkit`; `up` sets `GOOGLE_ISSUER` (browser-facing) and `GOOGLE_API_URL` (server-to-server); no webhooks; `GET /o/oauth2/v2/auth` lists the seeded users; `emulate.config.yaml` seeds the user `test@example.com`.
 - Stripe: route `stripe.emulate.pumpkit`; `up` sets `STRIPE_API_URL`, `STRIPE_WEBHOOK_URL` and `STRIPE_WEBHOOK_SECRET`; delivers webhooks to `http://web:3000/api/webhooks/stripe`; `GET /v1/customers` lists customers; `emulate.config.ts` seeds one product with a monthly price.
@@ -110,10 +110,10 @@ Chrome, Firefox, Edge, `curl` and Node's `fetch` resolve `*.localhost` on their 
 - **e2e** is the command that runs the repo's e2e suite; leave the line out when there is none.
 - **Cap** is the most stacks running at once on one machine, 4 by default. A Dev stack's Emulators count with it, not as stacks of their own, though each is one more process.
 - **Portless** is the pinned version. **Emulate** is the pinned emulate version; leave the line out when the stack has no Emulators. **Proxy** is the mode, `HTTP on <port>` or `HTTPS on <port>`: `HTTP on 1355` by default, `HTTPS on 443` after the upgrade.
-- **Emulators** has one line saying Emulator state resets on every `up`, then one bullet per Emulator: its route, the variables `up` sets, its webhook target if any, the path to inspect its state, and what its config seeds. Leave the section out when the stack has none.
+- **Emulators** has one line saying Emulator state resets to its config whenever `up` starts an Emulator, then one bullet per Emulator: its route, the variables `up` sets, its webhook target if any, the path to inspect its state, and what its config seeds. Leave the section out when the stack has none.
 - **Safe mode** lists each variable `up` sets and what it turns off, naming each provider emulate doesn't cover as a custom-Emulator candidate.
 - **HTTPS upgrade** is present only when the mode is HTTPS.
-- `scripts/dev-stack` repeats `PROJECT`, `PROXY_PORT` and `PROXY_TLS` (1 for HTTPS); `check-sdlc` warns when they disagree with the doc. Under strategy A it also repeats the Emulate version as `EMULATE_VERSION`.
+- `scripts/dev-stack` repeats `PROJECT`, `PROXY_PORT` and `PROXY_TLS` (1 for HTTPS); `check-sdlc` warns when they disagree with the doc. Under strategy A, `scripts/dev-stack` also repeats the Emulate version as `EMULATE_VERSION`.
 
 ## Portless 0.15.12 notes
 
