@@ -19,6 +19,17 @@ safe_mode_env() {
   export MAIL_TRANSPORT="console"
 }
 
+# Emulators, as "<service> <path that answers 200>": "google /.well-known/openid-configuration", "stripe /v1/customers".
+EMULATORS=()
+EMULATE_VERSION="0.13.0"
+
+# The variables the app reads each Emulator's URLs from, and an Emulator's webhook target and signing secret.
+emulator_env() {
+  # export GOOGLE_ISSUER="$(emulator_url google)"
+  # export STRIPE_WEBHOOK_URL="$DEV_URL/api/webhooks/stripe" STRIPE_WEBHOOK_SECRET="whsec_dev"
+  :
+}
+
 # Every route change would otherwise rewrite /etc/hosts, which needs root.
 export PORTLESS_SYNC_HOSTS=0
 
@@ -106,11 +117,15 @@ curl_ca() {
   return 0
 }
 
-healthy() {
+answers() {
   local args=()
   while IFS= read -r a; do args+=("$a"); done < <(curl_ca)
-  curl -fsS -o /dev/null -m 5 ${args[@]+"${args[@]}"} "$DEV_URL$HEALTH_PATH" 2>/dev/null
+  curl -fsS -o /dev/null -m 5 ${args[@]+"${args[@]}"} "$1" 2>/dev/null
 }
+
+healthy() { answers "$DEV_URL$HEALTH_PATH"; }
+
+emulator_url() { portless get "$1.emulate.$PROJECT" </dev/null; }
 
 wait_healthy() {
   local deadline=$((SECONDS + HEALTH_TIMEOUT))
@@ -195,7 +210,56 @@ a_postgres() {
 a_migrate() { node scripts/migrate.js; }
 a_seed() { node scripts/seed.js; }
 
+# Parallel first runs on a cold cache collide in npm's cache, so one fetch runs at a time on the machine.
+a_emulate_fetch() {
+  local lock="${TMPDIR:-/tmp}/sdlc-emulate-fetch.lock" holder deadline=$((SECONDS + 600))
+  until mkdir "$lock" 2>/dev/null; do
+    holder=$(cat "$lock/pid" 2>/dev/null || true)
+    if [ -n "$holder" ] && ! kill -0 "$holder" 2>/dev/null; then
+      rm -rf "$lock"
+      continue
+    fi
+    [ "$SECONDS" -ge "$deadline" ] && die "another up has held $lock for 600s; remove it if no up is running"
+    sleep 1
+  done
+  printf '%s\n' "$$" >"$lock/pid"
+  if ! npx --yes "emulate@$EMULATE_VERSION" --version </dev/null >/dev/null 2>&1; then
+    rm -rf "$lock"
+    die "could not fetch emulate@$EMULATE_VERSION through npx"
+  fi
+  rm -rf "$lock"
+}
+
+# For a config that leaves generated keys out, add --generated-secrets-file "$secrets"; emulate refuses an existing file.
+a_start_emulator() {
+  local svc=$1 secrets="$STATE_DIR/emulate-$1-secrets.json"
+  a_service_alive "emulate-$svc" && return 0
+  rm -f "$secrets"
+  a_start_service "emulate-$svc" "$svc.emulate.$PROJECT" npx --yes "emulate@$EMULATE_VERSION" start --service "$svc"
+}
+
+a_wait_emulator() {
+  local svc=$1 url deadline=$((SECONDS + HEALTH_TIMEOUT))
+  url="$(emulator_url "$svc")$2"
+  until answers "$url"; do
+    a_service_alive "emulate-$svc" || die "the $svc Emulator exited before it answered; see: scripts/dev-stack logs emulate-$svc"
+    [ "$SECONDS" -ge "$deadline" ] && die "no answer from $url after ${HEALTH_TIMEOUT}s; see: scripts/dev-stack logs emulate-$svc"
+    sleep 1
+  done
+}
+
+# Every Emulator starts, then each must answer, so an app that fetches OIDC discovery at boot finds it.
+a_emulators_up() {
+  local e
+  [ "${#EMULATORS[@]}" -gt 0 ] || return 0
+  emulator_env
+  a_emulate_fetch
+  for e in "${EMULATORS[@]}"; do a_start_emulator "${e%% *}"; done
+  for e in "${EMULATORS[@]}"; do a_wait_emulator "${e%% *}" "${e#* }"; done
+}
+
 a_up() {
+  a_emulators_up
   a_postgres
   a_migrate >&2
   seed_once >&2
