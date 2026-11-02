@@ -15,7 +15,7 @@ Scaffold the per-repo configuration that the engineering skills assume:
 - **Code comments**: a line in `AGENTS.md` so every session, in any flow, writes comments by the `code-comments` skill
 - **CI review**: a GitHub Actions workflow that checks every pull request for comment slop and runs `review-changes` on it, only on GitHub
 - **Worktrees**: the files and install command every new **Worktree** gets, the gitignore entries, and the `AGENTS.md` rule that keeps sessions out of the **Main checkout**
-- **Portless and the dev stack**: only when the repo has a runnable app, Portless and its proxy on this machine, the dev stack doc, and either a drafted `scripts/dev-stack` or one issue to make the app worktree-safe
+- **Portless and the dev stack**: only when the repo has a runnable app, Portless and its proxy on this machine, the dev stack doc, with an Emulator for each third-party provider the user accepts. Then one of: a drafted `scripts/dev-stack`, one issue to make the app worktree-safe, or the report's list of blockers when the user declines that issue
 
 This is a prompt-driven skill, not a deterministic script. Explore, present what you found, confirm with the user, then write on a `chore/setup-sdlc` worktree and finish with the `check-sdlc` checklist.
 
@@ -39,7 +39,9 @@ Look at the current repo to understand its starting state. Read whatever exists;
 - Bootstrap files: the gitignored files a fresh checkout lacks and the app or tests need (`.env`, `.env.local`; `git status --ignored --short` in the main checkout lists them), and the install command the lockfiles imply (`npm ci`, `pnpm install --frozen-lockfile`, `uv sync`, `bundle install`).
 - Repo-root tools that would scan `.claude/worktrees/`: test runners, linters, formatters, type checkers, watchers and content globs run from the root. For each, whether it already skips gitignored paths or needs the folder in its own ignore list, and which config file holds that list.
 - Does the repo have a runnable app? Signals: a `dev` or `start` script in `package.json`, a Compose file whose services publish ports, `manage.py`, `bin/rails`, a `Procfile`, a server the README says to start. A library, CLI or docs-only repo has none. This decides Sections G and H. With an app, also find:
-  - Each **isolation blocker**, with its file: fixed host ports (`"5173:5173"` in a Compose file, a pinned `--port`), a fixed Compose name (a top-level `name:`, `container_name:`), hard-coded app URLs (`localhost:<port>` in config or env defaults), e2e URLs pinned to a port (a Playwright `baseURL`, a health-check script), a shared database (one fixed database name or URL), and workers with outside effects (publishing, mail, payments, third-party webhooks) on by default.
+  - Each **isolation blocker**, with its file: fixed host ports (`"5173:5173"` in a Compose file, a pinned `--port`), a fixed Compose name (a top-level `name:`, `container_name:`), hard-coded app URLs (`localhost:<port>` in config or env defaults), e2e URLs pinned to a port (a Playwright `baseURL`, a health-check script), a shared database (one fixed database name or URL), and workers with outside effects (publishing, mail, payments, third-party webhooks) on by default, each with the provider it calls, if any.
+  - Each **third-party provider** the app talks to, with its file. Signals: SDK imports (`stripe`, `googleapis`, `@slack/web-api`, `resend`), env var names (`GOOGLE_CLIENT_ID`, `STRIPE_SECRET_KEY`, `RESEND_API_KEY` and the like), and provider entries in an auth library's config (an OAuth provider list, a sign-in strategy). Sort each one by emulate 0.13.0's built-in services, which its README lists: **covered** when emulate has a built-in **Emulator** for it, **not covered** otherwise. For each covered provider, note the variables the app reads the provider's URLs from (base URL, token issuer), if any, whether it delivers webhooks to the app, and, for a sign-in provider whose app sets no token, userinfo or JWKS endpoint and finds them only through the OIDC discovery document, the note "endpoints come only from the discovery document".
+  - For each covered provider, whether the app can be pointed at an Emulator. It can't when there is no variable the app reads the provider's URL from, as with an SDK left on its default endpoint (`new Stripe(key)` with no base-URL option or variable); a hard-coded provider URL (`https://oauth2.googleapis.com/token` in code); a pinned issuer (`accounts.google.com` in token validation); or a bypass flag (`VITE_BYPASS_AUTH=true`) where a configurable endpoint should be. Record this, and the discovery-document note above, as facts about the provider for Section H step 4.
   - How it runs in development (Docker Compose or native dev servers), its health endpoint, its e2e suite and command, and the variable it reads its own public URL from.
   - `docs/agents/dev-stack.md` and `scripts/dev-stack`, if a previous setup wrote them.
   - The machine: `node --version` (Portless 0.15.12 needs Node 24 or later); `portless --version`; the proxy, from `proxy.port` and `proxy.tls` (`1` for HTTPS) in `$PORTLESS_STATE_DIR` (default `~/.portless`) and whether `curl -sk` gets any answer on that port; passwordless sudo, from whether `sudo -n true` succeeds; Docker, from `docker info`. Read the proxy's options from `portless --help`, never `portless proxy start --help`, which starts a proxy in 0.15.12.
@@ -118,6 +120,7 @@ Show the user a draft of:
 - `docs/agents/worktrees.md`, the `.gitignore` lines and the tool ignore entries from Section F
 - `docs/agents/merge.md`, only when the user said yes to the merge policy
 - `docs/agents/dev-stack.md`, and either `scripts/dev-stack` or the body of the "Make the dev stack worktree-safe" issue, from Section H
+- The emulate config, and under strategy B `emulate.Dockerfile` and the Compose `emulate` service, only when the user accepted Emulators in Section H and no blocker stopped the script
 
 Let them edit before writing.
 
@@ -188,13 +191,15 @@ Write the Section F and H files as approved in step 3. Make `scripts/dev-stack` 
 
 **Commit and file.** Commit everything on `chore/setup-sdlc` as one commit, `chore: set up the sdlc skills`. Then, when the user said yes to it in Section H, file the "Make the dev stack worktree-safe" issue on the tracker, as `docs/agents/issue-tracker.md` describes.
 
+**Warm emulate**, optional. When the committed `scripts/dev-stack` has an Emulator block under strategy A, you may fetch the package once from the main checkout: `npx --yes emulate@0.13.0 --version`. `up` fetches it anyway before it starts any Emulator, so warming only spares the first `up` the wait for the download. Report it in one line; a failure only means the first `up` downloads it.
+
 Done when `git status` in the worktree is clean and the issue, if any, has its number.
 
 ### 5. Check
 
 Read `check-sdlc/SKILL.md` from the skill folder alongside this one and follow it, with two changes while `chore/setup-sdlc` is unmerged: run `check.sh <worktree path>` every round, so the repo checks read the new files, and land repo-file fixes on `chore/setup-sdlc` instead of `chore/sdlc-fixes`. Skip its step 6; step 6 below hands the branch over.
 
-In the blocker case, `devstack.script` fails until the issue lands; name the issue next to it.
+In the blocker case, `devstack.script` fails until the issue lands, and under strategy B with Emulators `devstack.emulate-version` warns, since only the doc pins emulate until then. Both are expected: name the issue next to each. When the user declined the issue and blockers remained, `devstack.script` fails with no issue to name: list each remaining isolation blocker next to it, with its file.
 
 Done when the checklist's loop has ended.
 
