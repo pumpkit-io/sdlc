@@ -14,9 +14,21 @@ HEALTH_TIMEOUT=120
 # The variable the app reads its own public URL from.
 APP_URL_VAR="APP_URL"
 
-# Workers that act on the outside world stay off or point at fakes. TODO: list this app's switches.
+# A worker with an outside effect points at an Emulator or is switched off here. TODO: list this app's switches.
 safe_mode_env() {
   export MAIL_TRANSPORT="console"
+}
+
+# Emulators, as "<service> <path that answers 200>": "google /.well-known/openid-configuration", "stripe /v1/customers".
+EMULATORS=()
+EMULATE_VERSION="0.13.0"
+
+# The variables the app reads each Emulator's URLs from, and an Emulator's webhook target and signing secret.
+emulator_env() {
+  # Assign before export: export would hide a failed emulator_url from set -e.
+  # GOOGLE_ISSUER=$(emulator_url google); export GOOGLE_ISSUER
+  # export STRIPE_WEBHOOK_URL="$DEV_URL/api/webhooks/stripe" STRIPE_WEBHOOK_SECRET="whsec_dev"
+  :
 }
 
 # Every route change would otherwise rewrite /etc/hosts, which needs root.
@@ -106,10 +118,22 @@ curl_ca() {
   return 0
 }
 
-healthy() {
+answers() {
   local args=()
   while IFS= read -r a; do args+=("$a"); done < <(curl_ca)
-  curl -fsS -o /dev/null -m 5 ${args[@]+"${args[@]}"} "$DEV_URL$HEALTH_PATH" 2>/dev/null
+  curl -fsS -o /dev/null -m 5 ${args[@]+"${args[@]}"} "$1" 2>/dev/null
+}
+
+healthy() { answers "$DEV_URL$HEALTH_PATH"; }
+
+emulator_url() { portless get "$1.emulate.$PROJECT" </dev/null || die "portless get $1.emulate.$PROJECT failed"; }
+
+# A malformed entry would poll a broken URL until the timeout, so up refuses it first.
+check_emulators() {
+  local e
+  for e in ${EMULATORS[@]+"${EMULATORS[@]}"}; do
+    [[ "$e" =~ ^[a-z0-9-]+\ /[^\ ]*$ ]] || die "EMULATORS entry \"$e\" needs a service and a path that starts with /"
+  done
 }
 
 wait_healthy() {
@@ -151,7 +175,14 @@ a_service_pid() {
 
 a_service_alive() { a_service_pid "$1" >/dev/null; }
 
-a_alive() { a_service_alive web; }
+a_emulators_alive() {
+  local e
+  for e in ${EMULATORS[@]+"${EMULATORS[@]}"}; do
+    a_service_alive "emulate-${e%% *}" || return 1
+  done
+}
+
+a_alive() { a_service_alive web && a_emulators_alive; }
 
 a_start_service() {
   local svc=$1 name=$2 pid
@@ -195,7 +226,61 @@ a_postgres() {
 a_migrate() { node scripts/migrate.js; }
 a_seed() { node scripts/seed.js; }
 
+# Parallel first runs on a cold cache collide in npm's cache, so one fetch runs at a time per cache.
+# The lock is a flock the kernel drops when its holder exits, so a dead up never leaves it held.
+a_emulate_fetch() {
+  local lock=${DEV_STACK_FETCH_LOCK:-} log="$STATE_DIR/emulate-fetch.log" cache code=0
+  command -v perl >/dev/null || die "the Emulate fetch lock needs perl; install it and run up again"
+  if [ -z "$lock" ]; then
+    cache=$(npm config get cache 2>/dev/null </dev/null || true)
+    lock="${cache:-$HOME/.npm}/_sdlc-emulate-fetch.lock"
+  fi
+  mkdir -p "$(dirname "$lock")" "$STATE_DIR"
+  perl -MFcntl=:flock -e '
+    open(my $f, ">>", shift) or exit 4;
+    my $deadline = time + shift;
+    until (flock($f, LOCK_EX | LOCK_NB)) { exit 3 if time >= $deadline; sleep 1 }
+    exit(system(@ARGV) == 0 ? 0 : 1);
+  ' "$lock" 600 npx --yes "emulate@$EMULATE_VERSION" --version </dev/null >"$log" 2>&1 || code=$?
+  case "$code" in
+    0) ;;
+    3) die "another up has held $lock for 600s" ;;
+    4) die "could not open $lock" ;;
+    *) die "could not fetch emulate@$EMULATE_VERSION through npx; see $log" ;;
+  esac
+}
+
+# For a config that leaves generated keys out, add --generated-secrets-file "$secrets"; emulate refuses an existing file, so up deletes it first.
+a_start_emulator() {
+  local svc=$1 secrets="$STATE_DIR/emulate-$1-secrets.json"
+  a_service_alive "emulate-$svc" && return 0
+  rm -f "$secrets"
+  a_start_service "emulate-$svc" "$svc.emulate.$PROJECT" npx --yes "emulate@$EMULATE_VERSION" start --service "$svc"
+}
+
+a_wait_emulator() {
+  local svc=$1 url deadline=$((SECONDS + HEALTH_TIMEOUT))
+  url="$(emulator_url "$svc")$2"
+  until answers "$url"; do
+    a_service_alive "emulate-$svc" || die "the $svc Emulator exited before it answered; see: scripts/dev-stack logs emulate-$svc"
+    [ "$SECONDS" -ge "$deadline" ] && die "no answer from $url after ${HEALTH_TIMEOUT}s; see: scripts/dev-stack logs emulate-$svc"
+    sleep 1
+  done
+}
+
+# Every Emulator starts, then each must answer, so an app that fetches OIDC discovery at boot finds it.
+a_emulators_up() {
+  local e
+  [ "${#EMULATORS[@]}" -gt 0 ] || return 0
+  emulator_env
+  # A running stack skips the fetch, so it never waits behind another worktree's cold fetch.
+  a_emulators_alive || a_emulate_fetch
+  for e in "${EMULATORS[@]}"; do a_start_emulator "${e%% *}"; done
+  for e in "${EMULATORS[@]}"; do a_wait_emulator "${e%% *}" "${e#* }"; done
+}
+
 a_up() {
+  a_emulators_up
   a_postgres
   a_migrate >&2
   seed_once >&2
@@ -293,6 +378,7 @@ usage() { printf 'usage: scripts/dev-stack up|down|destroy|url|status|logs [serv
 
 case "${1:-}" in
   up)
+    check_emulators
     has_portless || die "portless is not installed; run the Portless section of setup-sdlc"
     ensure_proxy
     init_names
