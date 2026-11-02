@@ -15,7 +15,7 @@ Scaffold the per-repo configuration that the engineering skills assume:
 - **Code comments**: a line in `AGENTS.md` so every session, in any flow, writes comments by the `code-comments` skill
 - **CI review**: a GitHub Actions workflow that checks every pull request for comment slop and runs `review-changes` on it, only on GitHub
 - **Worktrees**: the files and install command every new **Worktree** gets, the gitignore entries, and the `AGENTS.md` rule that keeps sessions out of the **Main checkout**
-- **Portless and the dev stack**: only when the repo has a runnable app, Portless and its proxy on this machine, the dev stack doc with an Emulator for each third-party provider emulate covers, and either a drafted `scripts/dev-stack` or one issue to make the app worktree-safe
+- **Portless and the dev stack**: only when the repo has a runnable app, Portless and its proxy on this machine, the dev stack doc with an Emulator for each third-party provider the user accepts, and either a drafted `scripts/dev-stack` or one issue to make the app worktree-safe
 
 This is a prompt-driven skill, not a deterministic script. Explore, present what you found, confirm with the user, then write on a `chore/setup-sdlc` worktree and finish with the `check-sdlc` checklist.
 
@@ -191,7 +191,7 @@ Write the Section F and H files as approved in step 3. Make `scripts/dev-stack` 
 
 **Commit and file.** Commit everything on `chore/setup-sdlc` as one commit, `chore: set up the sdlc skills`. Then, when the user said yes to it in Section H, file the "Make the dev stack worktree-safe" issue on the tracker, as `docs/agents/issue-tracker.md` describes.
 
-**Warm emulate.** When the committed `scripts/dev-stack` has an Emulator block under strategy A, fetch the package once from the main checkout so the first `up` doesn't spend its health timeout on the download: `npx --yes emulate@0.13.0 --version`. Report it in one line; a failure only means the first `up` downloads it.
+**Warm emulate**, optional. When the committed `scripts/dev-stack` has an Emulator block under strategy A, you may fetch the package once from the main checkout: `npx --yes emulate@0.13.0 --version`. `up` fetches it anyway before it starts any Emulator, so warming only spares the first `up` the wait for the download. Report it in one line; a failure only means the first `up` downloads it.
 
 Done when `git status` in the worktree is clean and the issue, if any, has its number.
 
@@ -199,7 +199,7 @@ Done when `git status` in the worktree is clean and the issue, if any, has its n
 
 Read `check-sdlc/SKILL.md` from the skill folder alongside this one and follow it, with two changes while `chore/setup-sdlc` is unmerged: run `check.sh <worktree path>` every round, so the repo checks read the new files, and land repo-file fixes on `chore/setup-sdlc` instead of `chore/sdlc-fixes`. Skip its step 6; step 6 below hands the branch over.
 
-In the blocker case, `devstack.script` fails until the issue lands, and under strategy B with Emulators `devstack.emulate-version` warns, since only the doc pins emulate until then. Both are expected: name the issue next to each.
+In the blocker case, `devstack.script` fails until the issue lands, and under strategy B with Emulators `devstack.emulate-version` warns, since only the doc pins emulate until then. Both are expected: name the issue next to each. When the user declined the issue and blockers remained, `devstack.script` fails with no issue to name: list each remaining isolation blocker next to it, with its file.
 
 Done when the checklist's loop has ended.
 
