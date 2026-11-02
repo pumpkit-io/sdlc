@@ -87,6 +87,7 @@ fake="$fake"
 EOF
 cat >> "$fake/bin/npx" <<'EOF'
 echo "npx $*" >> "$fake/events"
+[ -e "$fake/npx-fails" ] && { echo "npm error 404 emulate not found" >&2; exit 1; }
 pkg=""
 for a in "$@"; do case "$a" in -*) ;; *) pkg="$a"; break ;; esac; done
 if [ ! -e "$fake/npx-cache/$pkg" ]; then
@@ -230,6 +231,46 @@ echo "# the fetch lock override"
 rm -rf "$fake/npx-cache"
 (cd "$wt" && PATH="$with_portless" DEV_STACK_FETCH_LOCK="$scratch/override.lock" bash scripts/dev-stack up </dev/null >/dev/null 2>&1)
 check "up takes the lock at DEV_STACK_FETCH_LOCK" "yes" "$([ -e "$scratch/override.lock" ] && echo yes)"
+stack "$with_portless" destroy >/dev/null 2>&1
+
+echo "# a running stack"
+wt="$emu/.claude/worktrees/signin"
+stack "$with_portless" up >/dev/null 2>&1
+rm -f "$fake/events"
+hold_lock 600
+start=$SECONDS
+stack "$with_portless" up >/dev/null 2>&1; code=$?
+kill "$holder"; wait "$holder" 2>/dev/null
+check "up succeeds with the fetch lock held" "0" "$code"
+check "without waiting for it" "yes" "$([ $((SECONDS - start)) -lt 5 ] && echo yes)"
+check "and fetches nothing" "" "$(events npx)"
+stack "$with_portless" destroy >/dev/null 2>&1
+
+echo "# a failed fetch"
+rm -rf "$fake/npx-cache"
+touch "$fake/npx-fails"
+err="$(stack "$with_portless" up 2>&1 >/dev/null)"; code=$?
+rm -f "$fake/npx-fails"
+check "up fails" "1" "$code"
+contains "and names the fetch log" ".sdlc/dev-stack/emulate-fetch.log" "$err"
+contains "which holds npx's output" "npm error 404 emulate not found" "$(cat "$wt/.sdlc/dev-stack/emulate-fetch.log" 2>/dev/null)"
+stack "$with_portless" destroy >/dev/null 2>&1
+
+echo "# no Perl"
+mkdir -p "$fake/no-perl"
+for d in /usr/bin /bin /usr/sbin /sbin; do
+  for f in "$d"/*; do
+    case "${f##*/}" in perl*) continue ;; esac
+    [ -e "$fake/no-perl/${f##*/}" ] || ln -s "$f" "$fake/no-perl/${f##*/}"
+  done
+done
+no_perl="$fake/portless-bin:$fake/bin:$fake/no-perl"
+check "the PATH has no perl" "" "$(PATH="$no_perl" command -v perl)"
+rm -f "$fake/events"
+err="$(stack "$no_perl" up 2>&1 >/dev/null)"; code=$?
+check "up fails" "1" "$code"
+contains "with a one-line reason" "the Emulate fetch lock needs perl" "$err"
+check "and runs nothing through npx" "" "$(events npx)"
 stack "$with_portless" destroy >/dev/null 2>&1
 
 echo "# a malformed Emulator entry"
