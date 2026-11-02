@@ -81,6 +81,10 @@ _Avoid_: instance, environment, dev server (when meaning the whole stack)
 The stable address a **Dev stack** answers at, derived from the **Slug** and the project name. It carries no port of its own (at most the one port every stack on the machine shares), and it never changes for a branch.
 _Avoid_: preview URL, localhost link
 
+**Emulator**:
+A local stand-in for one third-party service, run inside one **Dev stack**, that keeps state while it runs and returns to its seed when restarted.
+_Avoid_: mock, fake (for this), sandbox (the provider's own test mode)
+
 **Dev stack contract**:
 The fixed set of commands (`up`, `down`, `destroy`, `url`, `status`, `logs`) through which skills start, address and stop a repo's **Dev stack**. The harness fixes the commands; each repo implements them its own way.
 _Avoid_: dev script, launcher
@@ -93,6 +97,7 @@ _Avoid_: dev script, launcher
 - A repo has at most one **Design direction**; **Drift** is always measured against it
 - A **Main checkout** has many **Worktrees**; a **Worktree** has one **Slug**, at most one **Dev stack** and at most one active **Worktree lock**
 - A **Dev stack** has one **Dev URL** and is started and stopped only through its repo's **Dev stack contract**
+- A **Dev stack** has zero or more **Emulators**; an **Emulator** belongs to one **Dev stack**
 - A **Spec** has one **Feature branch link**, which leads to one **Feature worktree**; each **Implementer worktree** branches from a **Feature worktree**
 - A **Spec** has one **Stack**, built from its **Implementation flow**: an ordered list of **Groups**, each holding one or more **Tickets**; every **Ticket** is one pull request in the **Stack**
 
