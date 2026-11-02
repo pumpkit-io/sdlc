@@ -236,6 +236,24 @@ sed -i.bak 's/^EMULATE_VERSION="0.13.0"$/EMULATE_VERSION="0.12.0"/' "$emu/script
 out="$(run "$emu")"
 check "devstack.emulate-version warns on a mismatch" "scripts/dev-stack pins emulate 0.12.0; the dev stack doc pins 0.13.0." "$(detail devstack.emulate-version "$out")"
 check "and warns" "warn" "$(status devstack.emulate-version "$out")"
+# Replaces the script's EMULATE_VERSION line with $1, taken literally.
+set_pin() { PIN="$1" perl -i -pe 's/^.*EMULATE_VERSION=.*$/$ENV{PIN}/' "$emu/scripts/dev-stack"; }
+set_pin 'EMULATE_VERSION=0.13.0 # pin'
+out="$(run "$emu")"
+check "devstack.emulate-version ignores a trailing comment" "pass" "$(status devstack.emulate-version "$out")"
+set_pin 'EMULATE_VERSION="0.13.0"  # pin'
+out="$(run "$emu")"
+check "devstack.emulate-version reads a quoted pin before a comment" "pass" "$(status devstack.emulate-version "$out")"
+set_pin "export EMULATE_VERSION='0.13.0'"
+out="$(run "$emu")"
+check "devstack.emulate-version reads an exported, single-quoted pin" "pass" "$(status devstack.emulate-version "$out")"
+set_pin $'EMULATE_VERSION="0.13.0"\r'
+out="$(run "$emu")"
+check "devstack.emulate-version reads a CRLF line" "pass" "$(status devstack.emulate-version "$out")"
+mv "$emu/scripts/dev-stack" "$scratch/emu-dev-stack"
+out="$(run "$emu")"
+check "devstack.emulate-version skips without scripts/dev-stack" "skip" "$(status devstack.emulate-version "$out")"
+mv "$scratch/emu-dev-stack" "$emu/scripts/dev-stack"
 
 echo "# Emulate pin, strategy B"
 sed -i.bak 's/^- Strategy: A$/- Strategy: B/' "$emu/docs/agents/dev-stack.md" && rm "$emu/docs/agents/dev-stack.md.bak"
@@ -247,6 +265,9 @@ check "devstack.emulate-version reads the Dockerfile, not the script" "pass" "$(
 sed -i.bak 's/emulate@0.13.0/emulate@0.14.0/' "$emu/emulate.Dockerfile" && rm "$emu/emulate.Dockerfile.bak"
 out="$(run "$emu")"
 check "devstack.emulate-version warns on a Dockerfile mismatch" "emulate.Dockerfile pins emulate 0.14.0; the dev stack doc pins 0.13.0." "$(detail devstack.emulate-version "$out")"
+printf 'FROM node:24-slim\r\nRUN npm install -g "emulate@0.13.0"\r\n' > "$emu/emulate.Dockerfile"
+out="$(run "$emu")"
+check "devstack.emulate-version reads a quoted CRLF Dockerfile pin" "pass" "$(status devstack.emulate-version "$out")"
 
 echo "# Emulator routes"
 w1="$(cd "$emu" && bash "$worktree" create feat/w1 2>/dev/null | tail -n 1)"
