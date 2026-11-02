@@ -14,7 +14,7 @@ HEALTH_TIMEOUT=120
 # The variable the app reads its own public URL from.
 APP_URL_VAR="APP_URL"
 
-# Workers that act on the outside world stay off or point at fakes. TODO: list this app's switches.
+# A worker with an outside effect points at an Emulator or is switched off here. TODO: list this app's switches.
 safe_mode_env() {
   export MAIL_TRANSPORT="console"
 }
@@ -125,7 +125,15 @@ answers() {
 
 healthy() { answers "$DEV_URL$HEALTH_PATH"; }
 
-emulator_url() { portless get "$1.emulate.$PROJECT" </dev/null; }
+emulator_url() { portless get "$1.emulate.$PROJECT" </dev/null || die "portless get $1.emulate.$PROJECT failed"; }
+
+# A malformed entry would poll a broken URL until the timeout, so up refuses it first.
+check_emulators() {
+  local e
+  for e in ${EMULATORS[@]+"${EMULATORS[@]}"}; do
+    [[ "$e" =~ ^[a-z0-9-]+\ /[^\ ]*$ ]] || die "EMULATORS entry \"$e\" needs a service and a path that starts with /"
+  done
+}
 
 wait_healthy() {
   local deadline=$((SECONDS + HEALTH_TIMEOUT))
@@ -211,26 +219,34 @@ a_migrate() { node scripts/migrate.js; }
 a_seed() { node scripts/seed.js; }
 
 # Parallel first runs on a cold cache collide in npm's cache, so one fetch runs at a time on the machine.
+# The lock is a symlink to its holder's pid, so it never exists without one.
 a_emulate_fetch() {
-  local lock="${TMPDIR:-/tmp}/sdlc-emulate-fetch.lock" holder deadline=$((SECONDS + 600))
-  until mkdir "$lock" 2>/dev/null; do
-    holder=$(cat "$lock/pid" 2>/dev/null || true)
+  local lock="${TMPDIR:-/tmp}/sdlc-emulate-fetch.lock" holder taken deadline=$((SECONDS + 600))
+  until ln -sn "$$" "$lock" 2>/dev/null; do
+    holder=$(readlink "$lock" 2>/dev/null || true)
     if [ -n "$holder" ] && ! kill -0 "$holder" 2>/dev/null; then
-      rm -rf "$lock"
+      # Only one waiter's rename succeeds; one that grabbed a live lock taken over meanwhile puts it back.
+      taken="$lock.stale.$$"
+      if mv "$lock" "$taken" 2>/dev/null; then
+        holder=$(readlink "$taken" 2>/dev/null || true)
+        if [ -n "$holder" ] && kill -0 "$holder" 2>/dev/null; then
+          ln -sn "$holder" "$lock" 2>/dev/null || true
+        fi
+        rm -f "$taken"
+      fi
       continue
     fi
     [ "$SECONDS" -ge "$deadline" ] && die "another up has held $lock for 600s; remove it if no up is running"
     sleep 1
   done
-  printf '%s\n' "$$" >"$lock/pid"
-  if ! npx --yes "emulate@$EMULATE_VERSION" --version </dev/null >/dev/null 2>&1; then
-    rm -rf "$lock"
-    die "could not fetch emulate@$EMULATE_VERSION through npx"
-  fi
-  rm -rf "$lock"
+  local fetched=0
+  npx --yes "emulate@$EMULATE_VERSION" --version </dev/null >/dev/null 2>&1 && fetched=1
+  # A lock another up took over is theirs now.
+  [ "$(readlink "$lock" 2>/dev/null)" = "$$" ] && rm -f "$lock"
+  [ "$fetched" = 1 ] || die "could not fetch emulate@$EMULATE_VERSION through npx"
 }
 
-# For a config that leaves generated keys out, add --generated-secrets-file "$secrets"; emulate refuses an existing file.
+# For a config that leaves generated keys out, add --generated-secrets-file "$secrets"; emulate refuses an existing file, so up deletes it first.
 a_start_emulator() {
   local svc=$1 secrets="$STATE_DIR/emulate-$1-secrets.json"
   a_service_alive "emulate-$svc" && return 0
@@ -357,6 +373,7 @@ usage() { printf 'usage: scripts/dev-stack up|down|destroy|url|status|logs [serv
 
 case "${1:-}" in
   up)
+    check_emulators
     has_portless || die "portless is not installed; run the Portless section of setup-sdlc"
     ensure_proxy
     init_names
