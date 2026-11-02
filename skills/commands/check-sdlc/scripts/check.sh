@@ -345,6 +345,8 @@ else
     # Static aliases (pid 0) outlive their server; Portless drops routes whose process died.
     while IFS= read -r host; do
       s="${host%.$project.localhost}"
+      # An Emulator alias is <slug>.<service>.emulate; the main checkout's has no slug.
+      case "$s" in *.*.emulate) s="${s%%.*}" ;; esac
       case "$s" in *.*|"$host") continue ;; esac
       case "$live" in *" $s "*) ;; *) gone="$gone ${host%.localhost}" ;; esac
     done < <(jq -r '.[] | select(.pid == 0) | .hostname' "$state_dir/routes.json" 2>/dev/null)
@@ -360,7 +362,7 @@ fi
 
 stack_main=""
 if [ ! -f "$dev_doc" ]; then
-  for id in devstack.doc devstack.script devstack.url devstack.status; do emit "$id" skip "No dev stack doc."; done
+  for id in devstack.doc devstack.script devstack.emulate-version devstack.url devstack.status; do emit "$id" skip "No dev stack doc."; done
 else
   emit devstack.doc pass "docs/agents/dev-stack.md"
   if [ ! -e "$dev_script" ]; then
@@ -375,6 +377,28 @@ else
     emit devstack.script warn "scripts/dev-stack disagrees with the dev stack doc:$script_drift"
   else
     emit devstack.script pass "scripts/dev-stack"
+  fi
+  emulate_pin="$(field Emulate)"
+  if [ -z "$emulate_pin" ]; then
+    emit devstack.emulate-version skip "The dev stack doc has no '- Emulate:' line."
+  elif [ "$(field Strategy)" = B ]; then
+    got="$(sed -n 's/^RUN npm .*emulate@\([^[:space:]]*\).*$/\1/p' "$top/emulate.Dockerfile" 2>/dev/null | head -n 1)"
+    if [ -z "$got" ]; then
+      emit devstack.emulate-version warn "Strategy B and no emulate.Dockerfile pins emulate; the dev stack doc pins $emulate_pin."
+    elif [ "$got" = "$emulate_pin" ]; then
+      emit devstack.emulate-version pass "emulate.Dockerfile pins $got, as the doc does."
+    else
+      emit devstack.emulate-version warn "emulate.Dockerfile pins emulate $got; the dev stack doc pins $emulate_pin."
+    fi
+  else
+    got="$(sed -n 's/^EMULATE_VERSION="\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' "$dev_script" 2>/dev/null | head -n 1)"
+    if [ -z "$got" ]; then
+      emit devstack.emulate-version warn "scripts/dev-stack sets no EMULATE_VERSION; the dev stack doc pins $emulate_pin."
+    elif [ "$got" = "$emulate_pin" ]; then
+      emit devstack.emulate-version pass "scripts/dev-stack pins $got, as the doc does."
+    else
+      emit devstack.emulate-version warn "scripts/dev-stack pins emulate $got; the dev stack doc pins $emulate_pin."
+    fi
   fi
   if [ ! -x "$dev_script" ]; then
     :
@@ -405,11 +429,12 @@ if [ ! -f "$dev_doc" ]; then
   emit stacks.merged skip "No dev stack doc."
 else
   # Per machine, so every repo's routes count; routes sharing a first and last label are one stack's services.
+  # A main checkout's Emulator, <service>.emulate.<project>, belongs to <project>.
   if ! command -v jq >/dev/null 2>&1; then
     emit stacks.cap skip "jq is not on PATH."
   else
     stacks="$(jq -r '.[].hostname' "$state_dir/routes.json" 2>/dev/null | sed 's/\.localhost$//' |
-      awk -F . '{ k = NF > 2 ? $1 "." $NF : $0 } !seen[k]++ { print k }')"
+      awk -F . '{ k = NF == 3 && $2 == "emulate" ? $3 : NF > 2 ? $1 "." $NF : $0 } !seen[k]++ { print k }')"
     running="$(printf '%s' "$stacks" | grep -c .)"
     if [ "$running" -gt "$cap" ]; then
       emit stacks.cap warn "$running stacks running on this machine; the cap is $cap: $(printf '%s' "$stacks" | tr '\n' ' ')"
