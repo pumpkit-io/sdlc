@@ -116,7 +116,7 @@ The PRs of a spec form a Stack: a linear chain rooted at the feature branch, whi
 
 Each skill says where it moved the session in one line (`Worktree: <path> (<branch>)`). Your routine stays the same, and your main checkout stays as you left it: no agent edits or commits there. Start as many grilling sessions at once as you like; each gets its own worktree and branch, and ADR numbers stay distinct across branches. Two sessions never share a worktree: a second `implement` on the same feature stops, names the session holding the worktree's lock, and points you to `implement-spec`.
 
-A Dev URL looks like `http://<slug>.<project>.localhost:1355`, one per worktree, so several stacks run side by side. Open it to try what the agent built; the stack stays up until the worktree is finished.
+A Dev URL looks like `http://<slug>.<project>.localhost:1355`, one per worktree, so several stacks run side by side. Open it to try what the agent built; the stack stays up until the worktree is finished. Third-party services run against Emulators inside the stack, one set per worktree, so sign-in and webhooks work on every Dev URL; a service no Emulator covers stays off in safe mode. An Emulator can drift from the real API, so the Run report lists the flows to try against the real provider before release.
 
 - Tickets written a while ago: `refresh-spec <spec>` first, to update them to the code as it is now.
 - Small work that fits one session: `grill-with-docs`, then `implement` in the same session and worktree.
