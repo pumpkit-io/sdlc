@@ -21,6 +21,7 @@ safe_mode_env() {
 
 # Emulators, as "<service> <path that answers 200>": "google /.well-known/openid-configuration", "stripe /v1/customers".
 EMULATORS=()
+# Strategy A only; under B, emulate.Dockerfile pins the version.
 EMULATE_VERSION="0.13.0"
 
 # The variables the app reads each Emulator's URLs from, and an Emulator's webhook target and signing secret.
@@ -28,6 +29,10 @@ emulator_env() {
   # Assign before export: export would hide a failed emulator_url from set -e.
   # GOOGLE_ISSUER=$(emulator_url google); export GOOGLE_ISSUER
   # export STRIPE_WEBHOOK_URL="$DEV_URL/api/webhooks/stripe" STRIPE_WEBHOOK_SECRET="whsec_dev"
+  # Strategy B: containers reach an Emulator at its Compose address, and the webhook target is the web service's.
+  # GOOGLE_API_URL=$(b_emulator_api_url google); export GOOGLE_API_URL
+  # STRIPE_API_URL=$(b_emulator_api_url stripe); export STRIPE_API_URL
+  # export STRIPE_WEBHOOK_URL="http://$B_WEB_SERVICE:$B_WEB_PORT/api/webhooks/stripe" STRIPE_WEBHOOK_SECRET="whsec_dev"
   :
 }
 
@@ -127,6 +132,17 @@ answers() {
 healthy() { answers "$DEV_URL$HEALTH_PATH"; }
 
 emulator_url() { portless get "$1.emulate.$PROJECT" </dev/null || die "portless get $1.emulate.$PROJECT failed"; }
+
+# Usage: wait_emulator <service> <path> <stack service that runs it>.
+wait_emulator() {
+  local svc=$1 url deadline=$((SECONDS + HEALTH_TIMEOUT))
+  url="$(emulator_url "$svc")$2"
+  until answers "$url"; do
+    "${STRATEGY}_service_alive" "$3" || die "the $svc Emulator exited before it answered; see: scripts/dev-stack logs $3"
+    [ "$SECONDS" -ge "$deadline" ] && die "no answer from $url after ${HEALTH_TIMEOUT}s; see: scripts/dev-stack logs $3"
+    sleep 1
+  done
+}
 
 # A malformed entry would poll a broken URL until the timeout, so up refuses it first.
 check_emulators() {
@@ -258,16 +274,6 @@ a_start_emulator() {
   a_start_service "emulate-$svc" "$svc.emulate.$PROJECT" npx --yes "emulate@$EMULATE_VERSION" start --service "$svc"
 }
 
-a_wait_emulator() {
-  local svc=$1 url deadline=$((SECONDS + HEALTH_TIMEOUT))
-  url="$(emulator_url "$svc")$2"
-  until answers "$url"; do
-    a_service_alive "emulate-$svc" || die "the $svc Emulator exited before it answered; see: scripts/dev-stack logs emulate-$svc"
-    [ "$SECONDS" -ge "$deadline" ] && die "no answer from $url after ${HEALTH_TIMEOUT}s; see: scripts/dev-stack logs emulate-$svc"
-    sleep 1
-  done
-}
-
 # Every Emulator starts, then each must answer, so an app that fetches OIDC discovery at boot finds it.
 a_emulators_up() {
   local e
@@ -276,7 +282,7 @@ a_emulators_up() {
   # A running stack skips the fetch, so it never waits behind another worktree's cold fetch.
   a_emulators_alive || a_emulate_fetch
   for e in "${EMULATORS[@]}"; do a_start_emulator "${e%% *}"; done
-  for e in "${EMULATORS[@]}"; do a_wait_emulator "${e%% *}" "${e#* }"; done
+  for e in "${EMULATORS[@]}"; do wait_emulator "${e%% *}" "${e#* }" "emulate-${e%% *}"; done
 }
 
 a_up() {
@@ -343,33 +349,102 @@ a_logs() {
 B_COMPOSE_FILE="compose.dev.yml"
 B_WEB_SERVICE="web"
 B_WEB_PORT=3000
+# The Compose service built from emulate.Dockerfile. It serves the Nth EMULATORS entry on B_EMULATE_PORT + N - 1.
+B_EMULATE_SERVICE="emulate"
+B_EMULATE_PORT=4000
 
-b_compose() { docker compose -p "$COMPOSE_PROJECT" -f "$ROOT/$B_COMPOSE_FILE" "$@"; }
+# The Compose file reads these on every command, as it does APP_URL: the emulate command's --service and --base-url.
+b_emulate_env() {
+  local e services=""
+  for e in ${EMULATORS[@]+"${EMULATORS[@]}"}; do services="$services${services:+,}${e%% *}"; done
+  export EMULATE_SERVICES="$services"
+  export EMULATE_BASE_URL="${DEV_URL%%"$HOST"*}${ROUTE%"$PROJECT"}{service}.emulate.$PROJECT.localhost${DEV_URL#*"$HOST"}"
+}
 
-b_alive() { [ -n "$(b_compose ps -q --status running "$B_WEB_SERVICE" 2>/dev/null)" ]; }
+b_compose() {
+  b_emulate_env
+  docker compose -p "$COMPOSE_PROJECT" -f "$ROOT/$B_COMPOSE_FILE" "$@"
+}
+
+b_service_alive() { [ -n "$(b_compose ps -q --status running "$1" 2>/dev/null)" ]; }
+
+b_alive() {
+  b_service_alive "$B_WEB_SERVICE" || return 1
+  [ "${#EMULATORS[@]}" -eq 0 ] || b_service_alive "$B_EMULATE_SERVICE"
+}
 
 # TODO: the app's migration and seed commands, run inside the web container.
 b_migrate() { b_compose exec -T "$B_WEB_SERVICE" node scripts/migrate.js; }
 b_seed() { b_compose exec -T "$B_WEB_SERVICE" node scripts/seed.js; }
 
+b_emulator_route() { printf '%s%s.emulate.%s\n' "${ROUTE%"$PROJECT"}" "$1" "$PROJECT"; }
+
+b_emulator_port() {
+  local e i=0
+  for e in ${EMULATORS[@]+"${EMULATORS[@]}"}; do
+    [ "${e%% *}" = "$1" ] && { printf '%s\n' $((B_EMULATE_PORT + i)); return 0; }
+    i=$((i + 1))
+  done
+  die "$1 is not in EMULATORS"
+}
+
+b_emulator_api_url() {
+  local port
+  # A command substitution ignores set -e, so the failure must stop up here.
+  port=$(b_emulator_port "$1") || exit 1
+  printf 'http://%s:%s\n' "$B_EMULATE_SERVICE" "$port"
+}
+
+# down removes the routes up recorded, so an Emulator dropped from EMULATORS in between leaves no route behind.
+b_alias() {
+  local routes="$STATE_DIR/routes"
+  # --force only ever re-points this worktree's own route at its new port.
+  portless alias "$1" "$2" --force </dev/null >&2
+  grep -qxF "$1" "$routes" 2>/dev/null || printf '%s\n' "$1" >>"$routes"
+}
+
+b_emulators_up() {
+  local e svc port hostport
+  [ "${#EMULATORS[@]}" -gt 0 ] || return 0
+  emulator_env
+  b_compose up -d --build --wait "$B_EMULATE_SERVICE" >&2 || die "docker compose up $B_EMULATE_SERVICE failed; see: scripts/dev-stack logs $B_EMULATE_SERVICE"
+  for e in "${EMULATORS[@]}"; do
+    svc=${e%% *}
+    port=$(b_emulator_port "$svc")
+    hostport=$(b_compose port "$B_EMULATE_SERVICE" "$port") || die "$B_EMULATE_SERVICE does not publish port $port for $svc"
+    b_alias "$(b_emulator_route "$svc")" "${hostport##*:}"
+  done
+  for e in "${EMULATORS[@]}"; do wait_emulator "${e%% *}" "${e#* }" "$B_EMULATE_SERVICE"; done
+}
+
 b_up() {
+  b_emulators_up
   b_compose up -d --build --wait >&2 || die "docker compose up failed; see: scripts/dev-stack logs"
   b_migrate >&2
   seed_once >&2
   local hostport
   hostport=$(b_compose port "$B_WEB_SERVICE" "$B_WEB_PORT") || die "$B_WEB_SERVICE does not publish port $B_WEB_PORT"
-  # --force only ever re-points this worktree's own route at its new port.
-  portless alias "$ROUTE" "${hostport##*:}" --force </dev/null >&2
+  b_alias "$ROUTE" "${hostport##*:}"
+}
+
+b_remove_routes() {
+  local r routes="$STATE_DIR/routes"
+  portless alias --remove "$ROUTE" </dev/null >/dev/null 2>&1 || true
+  [ -f "$routes" ] || return 0
+  while IFS= read -r r; do
+    portless alias --remove "$r" </dev/null >/dev/null 2>&1 || true
+  done <"$routes"
+  rm -f "$routes"
 }
 
 b_down() {
   b_compose down >&2
-  portless alias --remove "$ROUTE" </dev/null >/dev/null 2>&1 || true
+  b_remove_routes
 }
 
 b_destroy() {
   b_compose down -v --remove-orphans >&2
-  portless alias --remove "$ROUTE" </dev/null >/dev/null 2>&1 || true
+  b_remove_routes
 }
 
 b_logs() { b_compose logs --no-color --tail 200 ${1+"$1"}; }

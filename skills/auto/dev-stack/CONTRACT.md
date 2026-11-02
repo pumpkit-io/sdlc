@@ -64,8 +64,43 @@ In HTTPS mode, server-side calls to an `https://` Emulator URL, and an Emulator 
 [`scripts/dev-stack.template.sh`](scripts/dev-stack.template.sh) implements both strategies; `setup-sdlc` keeps the block that fits and deletes the other.
 
 - **A, native processes behind `portless run`.** Each service runs as `portless run --name <name> <command>` in the background, which picks a free port, sets `PORT` and `HOST`, and adds the Slug prefix. Extra services get their own route (`api.<project>`), and the app reads their URLs with `portless get`. One shared Postgres container serves a database per Slug. Each Emulator is one `portless run --name <service>.emulate.<project> npx --yes emulate@<pin> start --service <service>`, one process per Emulator because Portless gives each process one `PORT`; the app reads its URLs with `portless get <service>.emulate.<project>`. Before starting them, `up` fetches the package once under a machine-wide lock in npm's cache, which needs Perl (`DEV_STACK_FETCH_LOCK` moves it), and skips the fetch when every Emulator already runs. `down` stops the `portless run` processes, which removes their routes.
-- **B, Docker Compose behind `portless alias`.** One Compose project per Slug; the web service publishes `127.0.0.1::<container port>`; `up` reads the host port with `docker compose port` and runs `portless alias <slug>.<project> <port> --force`. `down` is `docker compose down` plus `portless alias --remove <route>`; `destroy` is `docker compose down -v`.
+- **B, Docker Compose behind `portless alias`.** One Compose project per Slug; the web service publishes `127.0.0.1::<container port>`; `up` reads the host port with `docker compose port` and runs `portless alias <slug>.<project> <port> --force`. `down` is `docker compose down` plus `portless alias --remove <route>`; `destroy` is `docker compose down -v`. Emulators run in one `emulate` service per Compose project, described below.
 - **C, no app.** No contract and no dev stack doc.
+
+### Emulators under strategy B
+
+emulate has no official Docker image, so the repo builds one from `emulate.Dockerfile` in the repo root, which pins the version on its `RUN npm install -g emulate@<version>` line:
+
+```dockerfile
+FROM node:24-slim
+RUN npm install -g emulate@0.13.0
+WORKDIR /emulate
+ENTRYPOINT ["emulate"]
+```
+
+The `emulate` service serves every Emulator from one process on fixed container ports, listens on `0.0.0.0` and publishes each port as `127.0.0.1::<container port>`. emulate gives the services in `--service` order the ports `--port`, `--port` + 1 and so on, so the script's `B_EMULATE_PORT` matches `--port`, the published ports follow the `EMULATORS` order, and the config sets no `port`. The script sets `EMULATE_SERVICES` from `EMULATORS` and `EMULATE_BASE_URL`, the advertised URL with the `{service}` template, on every Compose command:
+
+```yaml
+services:
+  emulate:
+    build: { context: ., dockerfile: emulate.Dockerfile }
+    command: ["start", "--host", "0.0.0.0", "--port", "4000", "--service", "${EMULATE_SERVICES}", "--base-url", "${EMULATE_BASE_URL}"]
+    environment:
+      STRIPE_WEBHOOK_URL: ${STRIPE_WEBHOOK_URL:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    volumes: ["./emulate.config.ts:/emulate/emulate.config.ts:ro"]
+    ports: ["127.0.0.1::4000", "127.0.0.1::4001"]
+  web:
+    environment:
+      APP_URL: ${APP_URL}
+      GOOGLE_ISSUER: ${GOOGLE_ISSUER:-}
+      GOOGLE_API_URL: ${GOOGLE_API_URL:-}
+```
+
+- `up` starts the `emulate` service first, reads each published port with `docker compose port` and runs `portless alias <slug>.<service>.emulate.<project> <port> --force`, which gives this worktree its own route. It waits until each Emulator answers on its route, then starts the rest of the project.
+- The browser-facing URL is the route's URL, which `--base-url` also makes the token issuer. The server-to-server URL is `http://emulate:<container port>` (`b_emulator_api_url <service>`). The discovery document advertises the route, which a container can't reach, so the app configures its token, userinfo and JWKS endpoints explicitly from the server-to-server URL.
+- A webhook target is the web service's Compose address, `http://web:<port>/<path>`.
+- `up` records each alias it registers under `.sdlc/dev-stack/`, and `down` and `destroy` remove those with the web route, so an Emulator dropped from `EMULATORS` between `up` and `down` leaves no alias behind.
 
 ## The dev stack doc
 
@@ -113,7 +148,7 @@ Chrome, Firefox, Edge, `curl` and Node's `fetch` resolve `*.localhost` on their 
 - **Emulators** has one line saying Emulator state resets to its config whenever `up` starts an Emulator, then one bullet per Emulator: its route, the variables `up` sets, its webhook target if any, the path to inspect its state, and what its config seeds. Leave the section out when the stack has none.
 - **Safe mode** lists each variable `up` sets and what it turns off, naming each provider emulate doesn't cover as a custom-Emulator candidate.
 - **HTTPS upgrade** is present only when the mode is HTTPS.
-- `scripts/dev-stack` repeats `PROJECT`, `PROXY_PORT` and `PROXY_TLS` (1 for HTTPS); `check-sdlc` warns when they disagree with the doc. Under strategy A, `scripts/dev-stack` also repeats the Emulate version as `EMULATE_VERSION`.
+- `scripts/dev-stack` repeats `PROJECT`, `PROXY_PORT` and `PROXY_TLS` (1 for HTTPS); `check-sdlc` warns when they disagree with the doc. The Emulate version is repeated as `EMULATE_VERSION` in `scripts/dev-stack` under strategy A, and on `emulate.Dockerfile`'s `RUN npm install -g emulate@<version>` line under strategy B.
 
 ## Portless 0.15.12 notes
 
@@ -126,6 +161,7 @@ Chrome, Firefox, Edge, `curl` and Node's `fetch` resolve `*.localhost` on their 
 
 - A built-in Emulator answers its base URL with a JSON 404, and `/_emulate` exists only for custom Emulators. So `up` polls, per Emulator, a path that answers 200 without credentials: `/.well-known/openid-configuration` for Google, `/v1/customers` for Stripe, `/_emulate` for a custom one.
 - Its listener binds `127.0.0.1` and takes its port from `PORT`, so `portless run` works with no port flag. It falls back to `PORTLESS_URL` for its advertised URL.
+- `--host 0.0.0.0` lets a container publish it. One process serves several services on `--port` upward, in `--service` order, unless the config gives a service its own `port`.
 - It finds `emulate.config.{ts,mts,js,mjs,yaml,yml,json}` in the repo root on its own.
 - `--generated-secrets-file` refuses a file that exists and leaves it behind on exit, so `up` deletes it before starting the Emulator.
-- It delivers webhooks for Stripe, GitHub, Slack, Linear and Resend, and has no official Docker image.
+- It delivers webhooks for Stripe, GitHub, Slack, Linear and Resend.
