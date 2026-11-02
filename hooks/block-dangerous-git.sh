@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rules read each git, gh or portless command's own arguments, so commit messages and heredocs never trip them.
+# Rules read each git, gh, portless or emulate command's own arguments, so commit messages and heredocs never trip them.
 # Pushes to main are left to branch protection. Adapted from git-guardrails-claude-code in mattpocock/skills.
 
 PUSH_POLICY="allow"   # "allow": pushes allowed, except force and delete. "none": every push blocked.
@@ -124,10 +124,22 @@ check_portless() {
   esac
 }
 
+check_emulate() {
+  local a
+  for a in "$@"; do
+    case "$a" in
+      --portless|--portless=*) block "emulate --portless" "It registers machine-wide routes with --force, which override another worktree's. Start Emulators through the repo's dev stack contract, which routes them after this worktree." ;;
+    esac
+  done
+}
+
 # npx, pnpm dlx, yarn dlx, npm exec and the like: the package's arguments follow its name.
 check_launcher() {
   while [ $# -gt 0 ]; do
-    case "$1" in portless|portless@*) shift; check_portless "$@"; return ;; esac
+    case "$1" in
+      portless|portless@*) shift; check_portless "$@"; return ;;
+      emulate|emulate@*) shift; check_emulate "$@"; return ;;
+    esac
     shift
   done
 }
@@ -197,6 +209,7 @@ while IFS= read -r seg; do
     git|*/git) check_git "${w[@]:1}" ;;
     gh|*/gh) check_gh "${w[@]:1}" ;;
     portless|*/portless) check_portless "${w[@]:1}" ;;
+    emulate|*/emulate) check_emulate "${w[@]:1}" ;;
     npx|bunx|pnpx|pnpm|yarn|npm|bun|*/npx|*/pnpm|*/yarn|*/npm|*/bun) check_launcher "${w[@]:1}" ;;
   esac
 done < <(segments)

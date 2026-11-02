@@ -123,6 +123,16 @@ guard allow 'portless run next dev'
 guard allow 'portless proxy start -p 1355 --no-tls'
 guard allow 'git commit -m "never run portless clean"'
 
+guard block 'emulate start --portless'
+guard block 'emulate --portless'
+guard block 'npx emulate@0.13.0 start --portless'
+guard block 'pnpm dlx emulate start --service google --portless'
+guard block '/usr/local/bin/emulate start --portless'
+guard allow 'emulate start --service google'
+guard allow 'npx emulate@0.13.0 start --service google'
+guard allow 'git commit -m "never run emulate --portless"'
+guard allow "$(printf 'cat <<EOF\nemulate start --portless\nEOF')"
+
 slop_check() { check "$1" check-commit-slop "$2" command "$3"; }
 
 slop_check allow "$clean" 'git commit -m "add retry"'
