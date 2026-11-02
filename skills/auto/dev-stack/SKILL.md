@@ -32,7 +32,7 @@ Check the change at the Dev URL with the strongest check available, in this orde
 3. A headless browser script (Playwright, for one) run against the Dev URL.
 4. HTTP requests (`curl`) to each route the change touches, checking status codes and bodies.
 
-When the doc lists Emulators, a check can also confirm an outside effect of the change (the email went out, the charge exists) by reading the Emulator's state over HTTP or in the browser: request the inspect path its doc entry names at the URL `portless get <service>.emulate.<project>` prints from the worktree.
+When the doc lists Emulators, a check can also confirm an outside effect of the change (the email went out, the charge exists) by reading the Emulator's state over HTTP or in the browser: request the inspect path its doc entry names, or call the Emulator's own API (list the charges, say), at the URL `portless get <service>.emulate.<project>` prints from the worktree.
 
 Take a screenshot of each UI change at the Dev URL when a browser tool or headless script is available, and save it under `.sdlc/dev-stack/screenshots/`.
 

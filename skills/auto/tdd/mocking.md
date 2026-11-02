@@ -7,7 +7,7 @@ Mock at **system boundaries** only:
 - Time/randomness
 - File system (sometimes)
 
-For a provider `emulate` covers, an Emulator beats a hand-written mock in integration and e2e tests, because the real HTTP client runs against a stand-in that keeps the charges and users a test created: e2e tests use the Dev stack's Emulator when the dev stack doc lists one, and an integration test can start one in its own setup, which the harness doesn't require.
+For a provider `emulate` covers, an Emulator beats a hand-written mock in integration and e2e tests, because the real HTTP client runs against a stand-in that keeps the charges and users a test created: e2e tests use the Dev stack's Emulator when the dev stack doc lists one, and read its URL from a variable, never a hardcoded route, since `portless get` in a linked worktree puts the Slug in front. An integration test can start an Emulator in its own setup. The harness doesn't require integration tests to start one.
 
 Don't mock:
 
