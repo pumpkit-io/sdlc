@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs skills/auto/dev-stack/scripts/dev-stack.template.sh (strategy A) against fake portless, docker, curl, node, npm and npx.
+# Runs skills/auto/dev-stack/scripts/dev-stack.template.sh (strategies A and B) against fake portless, docker, curl, node, npm and npx.
 # Usage: tests/dev-stack.sh. Scratch repos go under $TMPDIR; no real container, proxy or route is touched.
 set -u
 
@@ -32,6 +32,14 @@ case "$1" in
     fi
     echo "http://$prefix$2.localhost:1355" ;;
   run) echo "run $3" >> "$events"; trap 'kill "$c" 2>/dev/null; exit 0' TERM; sleep 600 & c=$!; wait ;;
+  alias)
+    mkdir -p "$fake/aliases"
+    if [ "$2" = --remove ]; then
+      [ -e "$fake/aliases/$3" ] || exit 1
+      rm "$fake/aliases/$3"; echo "unalias $3" >> "$events"
+    else
+      echo "$3" > "$fake/aliases/$2"; echo "alias $2" >> "$events"
+    fi ;;
 esac
 exit 0
 EOF
@@ -42,6 +50,30 @@ cat > "$fake/bin/docker" <<EOF
 d="$fake/docker"
 EOF
 cat >> "$fake/bin/docker" <<'EOF'
+# docker compose -p <project> -f <file> <command>: a running service is a file b-<project>-<service>, each published port a file holding its host port.
+if [ "$1" = compose ]; then
+  p="$3"; shift 5
+  case "$1" in
+    up)
+      svcs="${*:2}"; svcs="${svcs//-d/}"; svcs="${svcs//--build/}"; svcs="${svcs//--wait/}"; svcs=$(echo $svcs)
+      echo "compose up $p${svcs:+ $svcs}" >> "$d/../events"
+      echo "$EMULATE_SERVICES $EMULATE_BASE_URL ${GOOGLE_API_URL:-} ${STRIPE_API_URL:-} ${STRIPE_WEBHOOK_URL:-}" > "$d/env-$p"
+      for s in ${svcs:-web emulate}; do
+        [ "$s" = emulate ] && [ -e "$d/../emulate-dies" ] && continue
+        touch "$d/b-$p-$s"
+      done ;;
+    port)
+      f="$d/port-$p-$2-$3"
+      if [ ! -e "$f" ]; then
+        n=$(cat "$d/next-port" 2>/dev/null || echo 50000); echo $((n + 1)) > "$d/next-port"; echo "$n" > "$f"
+      fi
+      echo "127.0.0.1:$(cat "$f")" ;;
+    ps) [ -e "$d/b-$p-${@: -1}" ] && echo "id-$p" ;;
+    down) rm -f "$d/b-$p-"* "$d/port-$p-"* ;;
+    exec) shift 3; node "$@" ;;
+  esac
+  exit 0
+fi
 case "$1" in
   inspect) [ -e "$d/c-${@: -1}" ] || exit 1; [ -e "$d/run-${@: -1}" ] && echo true || echo false ;;
   volume) [ -e "$d/v-${@: -1}" ] ;;
@@ -342,6 +374,81 @@ wt="$emu"
 rm -f "$fake/events"
 stack "$with_portless" up >/dev/null 2>&1
 contains "the route has no slug" "ready google.emulate.myapp.localhost:1355/.well-known/openid-configuration 0" "$(events ready)"
+stack "$with_portless" destroy >/dev/null 2>&1
+
+echo "# strategy B without Emulators"
+b="$(new_repo b)"
+mkdir -p "$b/scripts"
+sed 's|^STRATEGY="a"$|STRATEGY="b"|' "$template" > "$b/scripts/dev-stack"
+check "the copy runs strategy B" "1" "$(grep -c '^STRATEGY="b"$' "$b/scripts/dev-stack")"
+printf '.sdlc/\n.claude/worktrees/\n' > "$b/.gitignore"
+git -C "$b" add -A && git -C "$b" commit -q -m contract
+git -C "$b" worktree add -q -b feat/login "$b/.claude/worktrees/login"
+wt="$b/.claude/worktrees/login"
+rm -f "$fake/events"
+check "up prints the Dev URL" "http://login.myapp.localhost:1355" "$(stack "$with_portless" up 2>/dev/null | tail -n 1)"
+check "starts the Compose project once and aliases only the web route" "compose up myapp-login|alias login.myapp|" "$(events 'compose|alias|unalias')"
+check "status" "running" "$(stack "$with_portless" status 2>/dev/null)"
+stack "$with_portless" down >/dev/null 2>&1
+check "down removes only the web route" "compose up myapp-login|alias login.myapp|unalias login.myapp|" "$(events 'compose|alias|unalias')"
+stack "$with_portless" destroy >/dev/null 2>&1
+
+echo "# strategy B with Emulators"
+be="$(new_repo be)"
+mkdir -p "$be/scripts"
+sed -e 's|^STRATEGY="a"$|STRATEGY="b"|' \
+  -e 's|^EMULATORS=()$|EMULATORS=("google /.well-known/openid-configuration" "stripe /v1/customers")|' \
+  -e 's|^  # GOOGLE_API_URL=|  GOOGLE_API_URL=|' -e 's|^  # STRIPE_API_URL=|  STRIPE_API_URL=|' \
+  -e 's|^  # export STRIPE_WEBHOOK_URL="http|  export STRIPE_WEBHOOK_URL="http|' "$template" > "$be/scripts/dev-stack"
+check "the strategy B examples fill in" "3" "$(grep -cE '^  (GOOGLE_API_URL|STRIPE_API_URL|export STRIPE_WEBHOOK_URL="http)' "$be/scripts/dev-stack")"
+printf '.sdlc/\n.claude/worktrees/\n' > "$be/.gitignore"
+git -C "$be" add -A && git -C "$be" commit -q -m contract
+git -C "$be" worktree add -q -b feat/signin "$be/.claude/worktrees/signin"
+git -C "$be" worktree add -q -b feat/billing "$be/.claude/worktrees/billing"
+wt="$be/.claude/worktrees/signin"
+rm -f "$fake/events" "$fake"/answers-*
+check "up prints the Dev URL" "http://signin.myapp.localhost:1355" "$(stack "$with_portless" up 2>/dev/null | tail -n 1)"
+check "starts the emulate service, aliases each Emulator, waits for each to answer, then starts the rest" \
+  "compose up myapp-signin emulate|alias signin.google.emulate.myapp|alias signin.stripe.emulate.myapp|ready signin.google.emulate.myapp.localhost:1355/.well-known/openid-configuration 22|ready signin.google.emulate.myapp.localhost:1355/.well-known/openid-configuration 0|ready signin.stripe.emulate.myapp.localhost:1355/v1/customers 22|ready signin.stripe.emulate.myapp.localhost:1355/v1/customers 0|compose up myapp-signin|alias signin.myapp|" \
+  "$(events 'compose|alias|ready')"
+check "each alias points at its Emulator's published port" \
+  "$(cat "$fake/docker/port-myapp-signin-emulate-4000") $(cat "$fake/docker/port-myapp-signin-emulate-4001")" \
+  "$(cat "$fake/aliases/signin.google.emulate.myapp") $(cat "$fake/aliases/signin.stripe.emulate.myapp")"
+check "Compose gets the services in list order, the advertised URL and the server-to-server URLs" \
+  "google,stripe http://signin.{service}.emulate.myapp.localhost:1355 http://emulate:4000 http://emulate:4001 http://web:3000/api/webhooks/stripe" \
+  "$(cat "$fake/docker/env-myapp-signin")"
+check "status" "running" "$(stack "$with_portless" status 2>/dev/null)"
+
+echo "# two strategy B worktrees side by side"
+wt="$be/.claude/worktrees/billing"
+stack "$with_portless" up >/dev/null 2>&1
+check "the second worktree gets its own alias" "$(cat "$fake/docker/port-myapp-billing-emulate-4000")" "$(cat "$fake/aliases/billing.google.emulate.myapp" 2>/dev/null)"
+check "and the first keeps its own" "$(cat "$fake/docker/port-myapp-signin-emulate-4000")" "$(cat "$fake/aliases/signin.google.emulate.myapp" 2>/dev/null)"
+check "on another port" "yes" "$([ "$(cat "$fake/aliases/billing.google.emulate.myapp")" != "$(cat "$fake/aliases/signin.google.emulate.myapp")" ] && echo yes)"
+
+echo "# strategy B Emulators on down and destroy"
+wt="$be/.claude/worktrees/signin"
+stack "$with_portless" down >/dev/null 2>&1
+check "down removes this worktree's routes" "" "$(ls "$fake/aliases" | grep '^signin\.')"
+check "and leaves the other worktree's" "billing.google.emulate.myapp billing.myapp billing.stripe.emulate.myapp" "$(ls "$fake/aliases" | grep '^billing\.' | tr '\n' ' ' | sed 's/ $//')"
+wt="$be/.claude/worktrees/billing"
+stack "$with_portless" destroy >/dev/null 2>&1
+check "destroy removes its routes too" "" "$(ls "$fake/aliases")"
+
+echo "# strategy B Emulators in the main checkout"
+wt="$be"
+stack "$with_portless" up >/dev/null 2>&1
+check "the routes have no slug" "google.emulate.myapp myapp stripe.emulate.myapp" "$(ls "$fake/aliases" | tr '\n' ' ' | sed 's/ $//')"
+stack "$with_portless" destroy >/dev/null 2>&1
+
+echo "# a strategy B emulate service that exits"
+wt="$be/.claude/worktrees/signin"
+rm -f "$fake"/answers-*
+touch "$fake/emulate-dies"
+err="$(stack "$with_portless" up 2>&1 >/dev/null)"; code=$?
+rm -f "$fake/emulate-dies"
+check "up fails" "1" "$code"
+contains "and says why" "the google Emulator exited before it answered" "$err"
 stack "$with_portless" destroy >/dev/null 2>&1
 
 finish_tests
